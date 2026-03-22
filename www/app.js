@@ -879,13 +879,17 @@ async function fetchGlobalWaves() {
 
     // Ontdek host IP, of gebruik het lokale Mac IP voor de telefoon
     let url;
+    const isCapacitor = window.Capacitor && window.Capacitor.isNative;
     const host = window.location.hostname;
 
-    if (host === 'localhost' || host === '') {
-        // Lokale testmodus: Gebruik lokale machine IP zodat iPhone app dadelijk ook lokaal werkt
+    if (isCapacitor) {
+        // iOS App: Altijd direct naar de online Koyeb database verbinden!
+        url = `https://opposite-rosetta-cruisedash-94c0866d.koyeb.app/api/waves?min_lon=${min_lon}&max_lon=${max_lon}&min_lat=${min_lat}&max_lat=${max_lat}&min_height=2.0`;
+    } else if (host === 'localhost' || host === '127.0.0.1' || host === '') {
+        // Laptop lokale test (buiten Koyeb)
         url = `http://192.168.1.142:8000/api/waves?min_lon=${min_lon}&max_lon=${max_lon}&min_lat=${min_lat}&max_lat=${max_lat}&min_height=2.0`;
     } else {
-        // Productiemodus (Koyeb): Relatieve URL zodat het over HTTPS op hetzelfde domein draait
+        // Productiemodus via webbrowser op de Koyeb site zelf
         url = `/api/waves?min_lon=${min_lon}&max_lon=${max_lon}&min_lat=${min_lat}&max_lat=${max_lat}&min_height=2.0`;
     }
 

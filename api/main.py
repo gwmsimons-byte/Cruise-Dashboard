@@ -39,23 +39,27 @@ def download_latest_noaa_data():
         "dir": f"/gfs.{date_str}/{cycle}/wave/gridded"
     }
     
-    response = requests.get(base_url, params=params)
-    if response.status_code == 200:
-        with open(GRIB_FILE, "wb") as f:
-            f.write(response.content)
-        print("Intercept Successful: Data stored in live_waves.grib2")
-        return True
-    else:
-        print(f"Intercept Failed: {response.status_code}")
-        # Simplistic fallback check: if today failed, try yesterday 18z
-        yesterday = now - datetime.timedelta(days=1)
-        params["dir"] = f"/gfs.{yesterday.strftime('%Y%m%d')}/18/wave/gridded"
-        params["file"] = f"gfswave.t18z.global.0p25.f000.grib2"
-        res2 = requests.get(base_url, params=params)
-        if res2.status_code == 200:
+    try:
+        response = requests.get(base_url, params=params, timeout=25)
+        if response.status_code == 200:
             with open(GRIB_FILE, "wb") as f:
-                f.write(res2.content)
+                f.write(response.content)
+            print("Intercept Successful: Data stored in live_waves.grib2")
             return True
+        else:
+            print(f"Intercept Failed: {response.status_code}")
+            # Simplistic fallback check: if today failed, try yesterday 18z
+            yesterday = now - datetime.timedelta(days=1)
+            params["dir"] = f"/gfs.{yesterday.strftime('%Y%m%d')}/18/wave/gridded"
+            params["file"] = f"gfswave.t18z.global.0p25.f000.grib2"
+            res2 = requests.get(base_url, params=params, timeout=25)
+            if res2.status_code == 200:
+                with open(GRIB_FILE, "wb") as f:
+                    f.write(res2.content)
+                return True
+            return False
+    except Exception as e:
+        print(f"Intercept Connection Error: {e}")
         return False
 
 @app.get("/api/waves")
@@ -83,6 +87,11 @@ def get_waves(
     swh_key = [v for v in ds.variables if 'swh' in v.lower() or 'htsgw' in v.lower()][0]
     dir_key = [v for v in ds.variables if 'dirpw' in v.lower() or 'wvdir' in v.lower()][0]
     
+    # 0. MEMORY OPTIMIZATION: Subsample before converting to Pandas
+    # A full 0.25 degree global grid takes ~1 million rows. We skip some points
+    # to prevent the app from crashing on Koyeb's RAM limits.
+    ds = ds.isel(latitude=slice(0, None, 2), longitude=slice(0, None, 2))
+
     # Convert required variables to Pandas DataFrame
     df = ds[[swh_key, dir_key]].to_dataframe().reset_index()
 
