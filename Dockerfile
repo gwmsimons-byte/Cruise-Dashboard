@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 # Installeer systeem-afhankelijkheden (eccodes voor GRIB files)
 RUN apt-get update && apt-get install -y \
-    eccodes \
+    libeccodes0 \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
