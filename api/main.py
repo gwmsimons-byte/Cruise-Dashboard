@@ -87,13 +87,16 @@ def get_waves(
     swh_key = [v for v in ds.variables if 'swh' in v.lower() or 'htsgw' in v.lower()][0]
     dir_key = [v for v in ds.variables if 'dirpw' in v.lower() or 'wvdir' in v.lower()][0]
     
-    # 0. MEMORY OPTIMIZATION: Subsample before converting to Pandas
-    # A full 0.25 degree global grid takes ~1 million rows. We skip some points
-    # to prevent the app from crashing on Koyeb's RAM limits.
-    ds = ds.isel(latitude=slice(0, None, 2), longitude=slice(0, None, 2))
+    # 0. EXTREME MEMORY OPTIMIZATION VOOR KOYEB (OOM KILLER VOORKOMEN)
+    # 0.25 resolutie = 1 miljoen punten. Door 4 stappen over te slaan (1 graden resolutie)
+    # verlagen we het werkgeheugen (RAM) met 94%, ruimschoots binnen de grens van Koyeb.
+    ds_thinned = ds[[swh_key, dir_key]].isel(latitude=slice(0, None, 4), longitude=slice(0, None, 4))
 
     # Convert required variables to Pandas DataFrame
-    df = ds[[swh_key, dir_key]].to_dataframe().reset_index()
+    df = ds_thinned.to_dataframe().reset_index()
+    
+    # Verwijder tijdelijke grote variabelen direct uit geheugen
+    del ds_thinned
 
     # == 1. COORDINATE SHIFT ==
     # NOAA gebruikt lon 0-360, MapLibre wil dit in -180 tot 180
