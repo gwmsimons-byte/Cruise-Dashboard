@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Cruise Master Pro</title>
+    <script src='https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css' rel='stylesheet' />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="map"></div>
+    <div class="map-crosshair"></div>
+    <button id="addWaypointBtn" class="map-action-btn standalone" onclick="addWaypointAtCrosshair()"
+        title="Add Waypoint at Crosshair">
+        <span>📍+</span>
+    </button>
+
+    <button id="waveToggleBtn" class="map-action-btn standalone wave-toggle wave-active" onclick="toggleWaves()"
+        title="Toggle Wave Overlay">
+        <span>🌊</span>
+    </button>
+
+    <div class="hud-container">
+        <header>
+            <div class="status-group">
+                <span id="net-indicator" class="indicator">🌐</span>
+                <span id="sat-indicator" class="indicator">🛰️</span>
+                <span id="gps-time" class="time-label">--:--</span>
+                <span class="unit-mini" style="margin-left: 2px; opacity: 0.9;">UTC</span>
+            </div>
+
+            <div class="header-heading">
+                <span class="label" data-i18n="heading">HEADING</span>
+                <span id="digital-heading" class="value">---°</span>
+            </div>
+
+            <div class="header-right">
+                <button id="recenterBtn" class="recenter-btn hidden" onclick="recenterMap()">
+                    <span>⚓ RESUME</span>
+                </button>
+                <button class="settings-btn" onclick="openSettings()">⚙️</button>
+            </div>
+        </header>
+
+        <div class="spacer"></div>
+
+        <div class="bridge-panel">
+
+            <div class="glass-card nav-card">
+                <div class="dest-selector">
+                    <span class="icon">⚓</span>
+                    <span id="active-dest-name">--</span>
+                </div>
+
+                <div class="dist-display">
+                    <span class="value" id="distanceVal">--</span>
+                    <span class="unit-small" id="distUnitDisplay">NM</span>
+                </div>
+                <span class="label" data-i18n="distance">DISTANCE</span>
+            </div>
+
+            <div class="glass-card speed-card">
+                <span class="label" data-i18n="sog">SOG</span>
+                <div class="speed-box-vertical">
+                    <span class="value" id="snelheid">--.-</span>
+                    <span class="unit-small" id="speedUnitDisplay">KN</span>
+                </div>
+            </div>
+
+            <div class="glass-card env-card">
+                <div class="env-sub-col">
+                    <div class="data-point">
+                        <span class="label" data-i18n="location">LOCATION</span>
+                        <div id="coords" class="value-stack">
+                            <span>--.----</span>
+                            <span>--.----</span>
+                        </div>
+                    </div>
+                    <div class="data-point">
+                        <span class="label">ETA</span>
+                        <span class="value-small" id="eta-val">--:--</span>
+                    </div>
+                </div>
+                <div class="env-divider"></div>
+                <div class="env-sub-col">
+                    <div class="data-point">
+                        <span class="label" data-i18n="wind">WIND</span>
+                        <span class="value-small"><span id="wind">--</span> <small>Bft</small></span>
+                    </div>
+                    <div class="data-point">
+                        <span class="label" data-i18n="waves">WAVES</span>
+                        <span class="value-small"><span id="golven">--</span> <small>m</small></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ribbon-container">
+            <div class="compass-ribbon-window">
+                <div class="ribbon-marker"></div>
+                <div class="ribbon-strip" id="ribbonStrip"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HIER WORDT DE ROUTE DRAWER TOEGEVOEGD -->
+    <div id="route-drawer" class="drawer-closed">
+        <div class="drawer-handle" onclick="toggleDrawer()">
+            <div class="handle-bar"></div>
+        </div>
+        <div class="drawer-content">
+            <h3 id="leg-name">--</h3>
+            <div class="leg-info-grid">
+                <div class="info-item">
+                    <span class="label">Destination</span>
+                    <span id="next-port-label" class="value">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">ETA Date</span>
+                    <span id="eta-date" class="value">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">ETA Time</span>
+                    <span id="eta-time" class="value">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Remaining</span>
+                    <div>
+                        <span id="dist-remaining" class="value">--</span>
+                        <span class="unit-mini">NM</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-overlay" class="hidden">
+        <div class="settings-card">
+            <div class="settings-header">
+                <h2 data-i18n="settings_title">Settings</h2>
+                <button onclick="closeSettings()" class="close-btn">✕</button>
+            </div>
+
+            <div class="settings-body">
+                <div class="setting-row">
+                    <span data-i18n="language">Language</span>
+                    <button id="langBtn" onclick="toggleLanguage()">EN ➜ NL</button>
+                </div>
+
+                <div class="setting-row">
+                    <span data-i18n="units">Units</span>
+                    <button id="unitBtn" onclick="toggleUnits()">KN / NM</button>
+                </div>
+
+                <div class="setting-row">
+                    <span data-i18n="night_mode">Night Mode</span>
+                    <button id="nightModeBtn" onclick="toggleNightMode()">OFF</button>
+                </div>
+
+                <div class="records-section">
+                    <h3 data-i18n="records_title">Trip Records</h3>
+                    <div class="record-row">
+                        <span data-i18n="max_speed">Max Speed:</span>
+                        <div>
+                            <span id="log-maxSpeed" class="val">0.0</span>
+                            <span id="log-speedUnit" class="unit-mini">KN</span>
+                        </div>
+                    </div>
+                    <div class="record-row">
+                        <span data-i18n="max_wind">Max Wind:</span>
+                        <div><span id="log-maxWind" class="val">0</span> <span class="unit-mini">Bft</span></div>
+                    </div>
+                    <div class="record-row">
+                        <span data-i18n="max_waves">Max Waves:</span>
+                        <div><span id="log-maxWaves" class="val">0.0</span> <span class="unit-mini">m</span></div>
+                    </div>
+                    <button onclick="resetRecords()" class="reset-btn" data-i18n="reset_btn">Reset Records</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- <script src="capacitor.js"></script> -->
+    <script src="waypoints.js"></script>
+    <script src="itinerary.js"></script>
+    <script src="app.js"></script>
+
+
+    <!-- ROUTE EDITOR OVERLAY -->
+    <div id="route-editor-overlay" class="hidden">
+        <div class="editor-header">
+            <button class="back-btn" onclick="closeRouteEditor()">✕</button>
+            <h2>Manage Cruise Route</h2>
+            <div class="start-date-config">
+                <label>Departure Date</label>
+                <input type="date" id="cruise-start-date" onchange="updateTimelineDates()">
+            </div>
+        </div>
+
+        <div class="timeline-scroll-wrapper">
+            <div id="timeline-container" class="timeline-scroll-area">
+                <!-- Cards go here -->
+            </div>
+            <div class="custom-scrollbar-track">
+                <div id="custom-scrollbar-thumb" class="custom-scrollbar-thumb"></div>
+            </div>
+            <div class="scroll-fade-bottom"></div>
+            <div class="scroll-hint">↓ Scroll for more stops ↓</div>
+        </div>
+
+
+        <!-- Floating Action Button -->
+        <button class="add-stop-btn" onclick="showAddStopUI()">+</button>
+        <!-- PORT SEARCH OVERLAY -->
+        <div id="port-search-overlay" class="hidden">
+            <div class="search-input-wrapper">
+                <span>🔍</span>
+                <input type="text" id="port-search-input" placeholder="Search port (e.g. Rio, Miami...)"
+                    oninput="filterPorts()">
+                <button onclick="closePortSearch()" class="close-btn">✕</button>
+            </div>
+
+
+            <div id="search-results" class="search-results">
+                <!-- Results injected here -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- CROSSING ALERT UI (Moved outside to be visible on dashboard) -->
+    <div id="crossing-alert" class="crossing-alert hidden">
+        <div class="alert-content">
+            <span class="alert-icon">🌐</span>
+            <div class="alert-text">
+                <h4 id="crossing-title">Equator Crossing</h4>
+                <p>Distance to target: <span id="crossing-eta">--:--</span></p>
+            </div>
+        </div>
+        <div class="alert-progress">
+            <div id="crossing-progress-bar" class="progress-fill"></div>
+        </div>
+    </div>
+
+    <!-- CUSTOM CONFIRM MODAL -->
+    <div id="custom-modal-overlay" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-body">
+                <p id="modal-message">Are you sure?</p>
+            </div>
+            <div class="modal-footer">
+                <button id="modal-cancel-btn" class="modal-btn secondary">Cancel</button>
+                <button id="modal-confirm-btn" class="modal-btn primary">Confirm</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+
+</html>

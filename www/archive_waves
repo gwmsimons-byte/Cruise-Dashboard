@@ -1,0 +1,21 @@
+/* ARCHIEF: OUDE GOLF-LAYERS
+    Dit bestand is niet gekoppeld aan index.html.
+    Gebruik dit als naslagwerk voor WMS/Proxy pogingen.
+*/
+
+/*
+function addOldMarineLayers() {
+    // RainViewer Poging
+    if (!map.getSource('waves-source')) {
+        map.addSource('waves-source', {
+            'type': 'raster',
+            'tiles': ['https://tilecache.rainviewer.com/v2/radar/default/256/{z}/{x}/{y}/2/1_1.png'],
+            'tileSize': 256
+        });
+    }
+    
+    // NOAA Proxy Poging
+    // const waveUrl = 'https://nowcoast.noaa.gov/...';
+    // 'https://corsproxy.io/?' + encodeURIComponent(waveUrl)
+}
+*/

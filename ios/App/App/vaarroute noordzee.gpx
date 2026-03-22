@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<gpx version="1.1" creator="Xcode">
+    <trk>
+        <name>Speedy Cruise</name>
+        <trkseg>
+            <trkpt lat="52.4800" lon="4.4500"><time>2026-01-24T12:00:00Z</time></trkpt>
+            <trkpt lat="52.5500" lon="4.3500"><time>2026-01-24T12:01:00Z</time></trkpt>
+            <trkpt lat="52.6200" lon="4.2500"><time>2026-01-24T12:02:00Z</time></trkpt>
+        </trkseg>
+    </trk>
+</gpx>

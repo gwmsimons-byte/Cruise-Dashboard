@@ -1,0 +1,4 @@
+{
+    "python.useEnvironmentsExtension": false,
+    "python.defaultInterpreterPath": "../api/venv/bin/python"
+}

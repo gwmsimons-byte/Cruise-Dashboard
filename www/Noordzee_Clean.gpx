@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="CruiseMaster" xmlns="http://www.topografix.com/GPX/1/1">
+    <wpt lat="52.1200" lon="4.2000">
+        <name>Start</name>
+    </wpt>
+    <wpt lat="52.1500" lon="4.2500">
+        <name>Midden</name>
+    </wpt>
+    <wpt lat="52.1800" lon="4.3000">
+        <name>Eind</name>
+    </wpt>
+</gpx>

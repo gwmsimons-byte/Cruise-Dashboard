@@ -1,0 +1,1445 @@
+/* ==========================================
+   1. GLOBALE STIJLEN
+   ========================================== */
+:root {
+    --bg-color: #050b14;
+    --accent-color: #00d4ff;
+    --card-bg: rgba(5, 11, 20, 0.75);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+    --text-color: #ffffff;
+    --safe-top: env(safe-area-inset-top, 20px);
+    --safe-bottom: env(safe-area-inset-bottom, 20px);
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #050b14;
+    color: var(--text-color);
+    font-family: 'Inter', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+}
+
+#map {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.map-crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.map-crosshair::before,
+.map-crosshair::after {
+    content: '';
+    position: absolute;
+    background: var(--accent-color);
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
+}
+
+.map-crosshair::before {
+    width: 100%;
+    height: 1.5px;
+}
+
+.map-crosshair::after {
+    width: 1.5px;
+    height: 100%;
+}
+
+/* Verberg standaard Mapbox controls */
+.mapboxgl-ctrl-bottom-left,
+.mapboxgl-ctrl-bottom-right {
+    display: none !important;
+}
+
+.mapboxgl-ctrl-logo {
+    display: none !important;
+}
+
+.ship-marker {
+    transition: transform 0.5s linear, top 0.5s linear, left 0.5s linear;
+    will-change: transform;
+}
+
+.port-marker {
+    cursor: pointer;
+    border: 1.5px solid rgba(255, 255, 255, 0.7);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 5;
+}
+
+.port-marker.waypoint-variant {
+    background: #b0b0b0;
+    /* Lichter grijs voor waypoints */
+}
+
+.port-marker.stop-variant {
+    background: #8c8c8c;
+    /* ~20% donkerder grijs voor havens */
+}
+
+.port-marker:hover {
+    transform: scale(1.2);
+    background: var(--accent-color);
+    border-color: white;
+    z-index: 20;
+}
+
+.port-marker.active {
+    background: var(--accent-color);
+    border-color: white;
+    box-shadow: 0 0 15px var(--accent-color);
+    transform: scale(1.1);
+    z-index: 15;
+}
+
+.port-marker span {
+    pointer-events: none;
+}
+
+/* ==========================================
+   2. HUD CONTAINER
+   ========================================== */
+.hud-container {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    padding: var(--safe-top) 16px var(--safe-bottom) 16px;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.spacer {
+    flex-grow: 1;
+    pointer-events: none;
+}
+
+header,
+.recenter-btn,
+.bridge-panel,
+.ribbon-container,
+.settings-card,
+.crossing-alert {
+    pointer-events: auto;
+}
+
+/* ==========================================
+   3. HEADER
+   ========================================== */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 45px;
+}
+
+.status-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--card-bg);
+    padding: 5px 12px;
+    border-radius: 20px;
+    backdrop-filter: blur(8px);
+    border: var(--glass-border);
+}
+
+.header-heading {
+    text-align: center;
+    background: var(--card-bg);
+    padding: 2px 20px;
+    border-radius: 20px;
+    border: var(--glass-border);
+    backdrop-filter: blur(10px);
+}
+
+.header-heading .label {
+    display: block;
+    font-size: 0.55rem;
+    color: var(--accent-color);
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.header-heading .value {
+    font-size: 1.2rem;
+    font-weight: 800;
+}
+
+.header-right {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.indicator {
+    font-size: 1rem;
+    opacity: 0.4;
+    filter: grayscale(1);
+}
+
+.indicator.active {
+    opacity: 1;
+    filter: grayscale(0);
+}
+
+.time-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-left: 2px;
+}
+
+.settings-btn {
+    background: var(--card-bg);
+    border: var(--glass-border);
+    color: white;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.map-action-btn {
+    background: var(--card-bg);
+    border: var(--glass-border);
+    color: var(--accent-color);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+}
+
+.map-action-btn:active {
+    background: var(--accent-color);
+    color: black;
+    transform: scale(0.95);
+}
+
+.map-action-btn.standalone {
+    position: absolute;
+    top: calc(var(--safe-top) + 48px);
+    right: 16px;
+    z-index: 100;
+    pointer-events: auto;
+}
+
+.map-action-btn.standalone.wave-toggle {
+    top: calc(var(--safe-top) + 94px); /* placed exactly under the waypoint btn */
+    transition: all 0.3s ease;
+}
+
+.map-action-btn.wave-active {
+    background: rgba(0, 212, 255, 0.25);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.6);
+    color: white;
+}
+
+.recenter-btn {
+    background: var(--accent-color);
+    color: #000;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ==========================================
+   4. BRIDGE PANEL
+   ========================================== */
+.bridge-panel {
+    display: grid;
+    /* Geoptimaliseerde verhouding: Nav (1.2), Snelheid (0.6), Env (1.5) */
+    grid-template-columns: 1.2fr 0.6fr 1.5fr;
+    gap: 8px;
+    margin-bottom: 8px;
+    height: 90px;
+    width: 100%;
+}
+
+.glass-card {
+    background: var(--card-bg);
+    border: var(--glass-border);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Pulse animation for active indicators */
+@keyframes pulse-glow {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+        filter: drop-shadow(0 0 2px var(--accent-color));
+    }
+
+    50% {
+        transform: scale(1.15);
+        opacity: 0.8;
+        filter: drop-shadow(0 0 8px var(--accent-color));
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+        filter: drop-shadow(0 0 2px var(--accent-color));
+    }
+}
+
+.indicator.active {
+    opacity: 1;
+    filter: grayscale(0);
+    animation: pulse-glow 2s infinite ease-in-out;
+}
+
+
+/* Nav Card */
+.nav-card {
+    border: 1px solid rgba(0, 212, 255, 0.4);
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.1);
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.dest-selector {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 2px;
+}
+
+.dest-selector .icon {
+    margin-right: 5px;
+    font-size: 0.9rem;
+}
+
+.dest-selector select {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 700;
+    width: 100%;
+    appearance: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.dist-display {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.dist-display .value {
+    font-size: 1.6rem;
+    font-weight: 800;
+}
+
+.unit-small {
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 700;
+}
+
+.nav-card .label {
+    font-size: 0.5rem;
+    opacity: 0.5;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* Speed Card */
+.speed-card {
+    border: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+.speed-card .value.huge {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--accent-color);
+    line-height: 0.9;
+}
+
+.speed-card .label {
+    font-size: 0.55rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 800;
+}
+
+.speed-card .unit {
+    font-size: 0.65rem;
+    color: var(--accent-color);
+    font-weight: 700;
+}
+
+/* Env Card */
+.env-card {
+    flex-direction: row;
+    padding: 6px 10px;
+    justify-content: stretch;
+    min-width: 0;
+    overflow: hidden;
+    transition: border 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* --- Status States voor ENV-CARD --- */
+.env-card.state-ship {
+    border: 1px solid rgba(0, 212, 255, 0.6) !important;
+    box-shadow: inset 0 0 10px rgba(0, 212, 255, 0.2);
+}
+
+.env-card.state-scout {
+    border: 1px solid rgba(191, 90, 242, 0.6) !important;
+    box-shadow: inset 0 0 10px rgba(191, 90, 242, 0.2);
+}
+
+.env-card.state-stale {
+    border: 1px solid rgba(255, 149, 0, 0.8) !important;
+    box-shadow: inset 0 0 15px rgba(255, 149, 0, 0.3);
+    animation: pulse-stale 2s infinite alternate;
+}
+
+@keyframes pulse-stale {
+    from {
+        box-shadow: inset 0 0 5px rgba(255, 149, 0, 0.2);
+    }
+
+    to {
+        box-shadow: inset 0 0 20px rgba(255, 149, 0, 0.4);
+    }
+}
+
+.env-sub-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    text-align: left;
+    height: 100%;
+}
+
+.env-divider {
+    width: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    height: 75%;
+    align-self: center;
+    margin: 0 5px;
+    /* Verkleind van 8px om meer ruimte te winnen */
+}
+
+.data-point {
+    display: flex;
+    flex-direction: column;
+}
+
+.data-point .label {
+    font-size: 0.5rem;
+    opacity: 0.5;
+    font-weight: 700;
+}
+
+.data-point .value-small,
+.data-point .value-stack {
+    font-size: 1rem;
+    /* Verhoogd van 0.85rem voor maximale leesbaarheid */
+    font-weight: 700;
+    white-space: nowrap;
+    font-family: 'JetBrains Mono', 'Roboto Mono', 'Courier New', monospace;
+    letter-spacing: -0.2px;
+}
+
+.data-point .value-stack {
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+    margin-top: 1px;
+}
+
+.data-point .value-stack span {
+    display: block;
+}
+
+/* ==========================================
+   5. RIBBON
+   ========================================== */
+.ribbon-container {
+    position: relative;
+    height: 36px;
+    margin-bottom: 5px;
+}
+
+.compass-ribbon-window {
+    height: 100%;
+    width: 100%;
+    background: var(--card-bg);
+    border: var(--glass-border);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    backdrop-filter: blur(12px);
+    mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+}
+
+.ribbon-strip {
+    display: flex;
+    position: absolute;
+    height: 100%;
+    align-items: center;
+    left: 50%;
+    transition: transform 0.5s cubic-bezier(0.1, 0, 0.1, 1);
+    will-change: transform;
+}
+
+.ribbon-item {
+    width: 40px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.8rem;
+}
+
+/* Snelheid box vertical */
+.speed-box-vertical {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    margin-top: 2px;
+}
+
+.speed-box-vertical .value {
+    font-size: 2rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--text-color);
+}
+
+.speed-box-vertical .unit-small {
+    font-size: 0.65rem;
+    font-weight: 500;
+    opacity: 0.6;
+    color: var(--text-color);
+    text-transform: uppercase;
+    margin-top: -1px;
+    letter-spacing: 0.5px;
+}
+
+.ribbon-marker {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 60%;
+    top: 20%;
+    background: #e74c3c;
+    z-index: 10;
+}
+
+/* ==========================================
+   6. SETTINGS (GLASSMORPHISM)
+   ========================================== */
+#settings-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+#settings-overlay:not(.hidden) {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.settings-card {
+    width: 320px;
+    background: rgba(20, 30, 48, 0.9);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    color: white;
+    overflow: hidden;
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.settings-header h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1.4rem;
+    cursor: pointer;
+}
+
+.settings-body {
+    padding: 20px;
+}
+
+.setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.setting-row button {
+    background: rgba(0, 212, 255, 0.15);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    color: #00d4ff;
+    padding: 6px 14px;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    min-width: 80px;
+}
+
+.records-section {
+    margin-top: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.records-section h3 {
+    margin-top: 0;
+    font-size: 0.8rem;
+    color: #888;
+    text-transform: uppercase;
+}
+
+.record-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 6px 0;
+    font-size: 0.9rem;
+    color: #aaa;
+}
+
+.record-row .val {
+    color: white;
+    font-weight: bold;
+    font-family: monospace;
+}
+
+.unit-mini {
+    font-size: 0.7rem;
+    color: #666;
+    margin-left: 2px;
+}
+
+.reset-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(255, 50, 50, 0.15);
+    color: #ff5555;
+    border: 1px solid rgba(255, 50, 50, 0.4);
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+/* Nachtmodus tweaks */
+body.night-mode .glass-card {
+    background: rgba(0, 5, 15, 0.9);
+}
+
+body.night-mode #map {
+    filter: brightness(0.7) contrast(1.2);
+}
+
+/* ==========================================
+   ROUTE DRAWER
+   ========================================== */
+#route-drawer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(40px) saturate(200%);
+    -webkit-backdrop-filter: blur(40px) saturate(200%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 30px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    z-index: 1500;
+    transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+    pointer-events: auto;
+    padding-bottom: var(--safe-bottom);
+}
+
+.drawer-closed {
+    transform: translateY(100%);
+}
+
+.drawer-open {
+    transform: translateY(0);
+}
+
+.drawer-handle {
+    width: 100%;
+    height: 34px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+
+.handle-bar {
+    width: 40px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+}
+
+.drawer-content {
+    padding: 0 24px 20px 24px;
+    color: white;
+}
+
+.drawer-content h3 {
+    margin: 0 0 16px 0;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--accent-color);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.leg-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.info-item .label {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 700;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+}
+
+.info-item .value {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.nav-card {
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.nav-card:active {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* ==========================================
+   6. ROUTE EDITOR UI
+   ========================================== */
+#route-editor-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(10, 15, 25, 0.95);
+    backdrop-filter: blur(25px);
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    padding-top: env(safe-area-inset-top);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#route-editor-overlay.hidden {
+    transform: translateY(100%);
+    display: flex !important;
+    /* Voor de animatie */
+    pointer-events: none;
+}
+
+.editor-header {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.editor-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+
+.back-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.timeline-scroll-wrapper {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.timeline-scroll-area {
+    width: 100%;
+    height: 100%;
+    overflow-y: scroll;
+    direction: ltr;
+    /* Terug naar standaard rechts (betrouwbaarder op iOS) */
+    min-height: 0;
+    -webkit-overflow-scrolling: touch;
+    padding: 10px 10px 150px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    box-sizing: border-box;
+    background: rgba(0, 0, 0, 0.15);
+    /* Subtiele achtergrond voor de lijst */
+}
+
+
+.timeline-scroll-area>* {
+    direction: ltr;
+}
+
+
+/* Scroll Fade Effect */
+.scroll-fade-bottom {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100px;
+    background: linear-gradient(to top, rgba(10, 15, 25, 0.98), transparent);
+    pointer-events: none;
+    z-index: 50;
+}
+
+.scroll-hint {
+    position: absolute;
+    bottom: 110px;
+    left: 40px;
+    /* Ruimte voor scrollbar links */
+    right: 0;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--accent-color);
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    opacity: 0.9;
+    pointer-events: none;
+    z-index: 51;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 10px;
+    border-radius: 10px;
+    backdrop-filter: blur(5px);
+    width: fit-content;
+    margin: 0 auto;
+    animation: bounce-hint 2s infinite;
+}
+
+
+@keyframes bounce-hint {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+/* Geforceerde Hide Native Scrollbar */
+.timeline-scroll-area::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+}
+
+/* CUSTOM SCROLLBAR INDICATOR (Alternative Solution) */
+.custom-scrollbar-track {
+    position: absolute;
+    top: 5px;
+    bottom: 5px;
+    right: 4px;
+    width: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    z-index: 100;
+    pointer-events: none;
+    /* Niet interactief, puur visueel */
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.custom-scrollbar-thumb {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    /* Wordt door JS aangepast */
+    background: var(--accent-color);
+    border-radius: 10px;
+    opacity: 0.6;
+    transition: top 0.1s linear, height 0.3s ease;
+}
+
+
+
+
+
+/* Active Target Highlight */
+.timeline-card.active-target {
+    background: rgba(0, 212, 255, 0.15);
+    border: 1px solid var(--accent-color);
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+}
+
+.timeline-card.active-target::before {
+    content: "📍";
+    position: absolute;
+    left: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.2rem;
+    z-index: 10;
+}
+
+/* Timeline Card */
+.timeline-card {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 15px;
+    padding: 14px 18px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+    position: relative;
+    backdrop-filter: blur(10px);
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease;
+    width: 94%;
+    /* Iets smaller voor ademruimte voor de scrollbar */
+    box-sizing: border-box;
+    margin: 0 auto;
+    user-select: none;
+    -webkit-user-select: none;
+    /* iPhone prevent text select */
+    -webkit-touch-callout: none;
+    /* iPhone prevent context menu */
+}
+
+.timeline-card.past {
+    opacity: 0.5;
+    filter: grayscale(0.5);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.timeline-card.dragging {
+
+    transform: scale(1.05) translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+    z-index: 100;
+}
+
+.timeline-card.sea-day {
+    background: rgba(0, 212, 255, 0.05);
+    border-style: dashed;
+    grid-template-columns: 30px 1fr auto;
+}
+
+.card-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.status-badge {
+    font-size: 0.55rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 6px;
+    text-transform: uppercase;
+}
+
+.status-port {
+    background: #00d4ff;
+    color: #000;
+}
+
+.status-sea {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+.card-details {
+    display: flex;
+    gap: 15px;
+    margin-top: 2px;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.detail-label {
+    font-size: 0.55rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.detail-value {
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.card-weather {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.weather-icon {
+    font-size: 1.2rem;
+}
+
+.weather-temp {
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.right-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* Sea Day Special Layout */
+.sea-icon {
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Add Stop Button */
+.add-stop-btn {
+    position: absolute;
+    bottom: calc(30px + env(safe-area-inset-bottom));
+    right: 30px;
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00d4ff, #0083fe);
+    color: white;
+    font-size: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 30px rgba(0, 212, 255, 0.4);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    z-index: 100;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.add-stop-btn:active {
+    transform: scale(0.95);
+}
+
+.plus-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.primary-btn {
+    background: var(--accent-color);
+    color: black;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.card-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.delete-btn {
+    background: rgba(255, 59, 48, 0.2);
+    border: 1px solid rgba(255, 59, 48, 0.3);
+    color: #ff3b30;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+/* SEARCH UI */
+#port-search-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(10, 15, 25, 0.98);
+    z-index: 3000;
+    padding: calc(20px + env(safe-area-inset-top)) 20px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    transition: opacity 0.3s ease;
+}
+
+.search-input-wrapper {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.search-input-wrapper input {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.1rem;
+    width: 100%;
+    outline: none;
+}
+
+.search-results {
+    flex: 1;
+    overflow-y: scroll;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.search-results::-webkit-scrollbar {
+    width: 8px;
+    display: block !important;
+}
+
+.search-results::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+}
+
+.search-results::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+
+.result-item {
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    border: 1px solid transparent;
+}
+
+.result-item:active {
+    background: rgba(0, 212, 255, 0.1);
+    border-color: rgba(0, 212, 255, 0.3);
+}
+
+.setting-row.primary-row {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* CUSTOM MODAL SYSTEM */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    z-index: 5000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.modal-card {
+    width: 280px;
+    background: rgba(25, 35, 50, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 24px;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.modal-body p {
+    margin: 0 0 24px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 12px;
+}
+
+.modal-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.modal-btn.primary {
+    background: #ff3b30;
+    color: white;
+}
+
+.modal-btn.secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.crossing-alert {
+    position: fixed;
+    top: calc(10px + env(safe-area-inset-top));
+    /* Hoger geplaatst */
+    left: 20px;
+    right: 20px;
+    background: rgba(0, 40, 60, 0.85);
+    /* Donkerdere achtergrond voor meer contrast */
+    backdrop-filter: blur(25px) brightness(1.2);
+    border: 1px solid rgba(0, 212, 255, 0.5);
+    border-radius: 16px;
+    padding: 16px;
+    z-index: 10000;
+    /* Hoogste prioriteit */
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 212, 255, 0.2);
+    transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.4s ease;
+}
+
+.crossing-alert.hidden {
+    transform: translateY(-150px) scale(0.9);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.alert-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.alert-icon {
+    font-size: 1.8rem;
+}
+
+.alert-text h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--accent-color);
+}
+
+.alert-text p {
+    margin: 2px 0 0 0;
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+.alert-progress {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--accent-color);
+    width: 0%;
+    transition: width 0.1s linear;
+}
+
+/* Waypoint Features */
+.waypoint-action-row {
+    padding: 10px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.waypoint-add-btn {
+    width: 100%;
+    padding: 12px;
+    background: rgba(0, 212, 255, 0.15);
+    border: 1px dashed var(--accent-color);
+    border-radius: 12px;
+    color: var(--accent-color);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.waypoint-add-btn:active {
+    background: var(--accent-color);
+    color: white;
+    transform: scale(0.98);
+}
+
+.mini-icon-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.2s;
+}
+
+.mini-icon-btn:active {
+    background: rgba(255, 255, 255, 0.3);
+}

@@ -1,0 +1,398 @@
+[
+    {
+        "name": "Miami",
+        "country": "USA",
+        "locode": "USMIA",
+        "region": "North America (Atlantic/Gulf)"
+    },
+    {
+        "name": "Port Canaveral",
+        "country": "USA",
+        "locode": "USPCV",
+        "region": "North America (Atlantic/Gulf)"
+    },
+    {
+        "name": "Fort Lauderdale (Port Everglades)",
+        "country": "USA",
+        "locode": "USPEF",
+        "region": "North America (Atlantic/Gulf)"
+    },
+    {
+        "name": "New York",
+        "country": "USA",
+        "locode": "USNYC",
+        "region": "North America (Atlantic/Gulf)"
+    },
+    {
+        "name": "Galveston",
+        "country": "USA",
+        "locode": "USGLV",
+        "region": "North America (Atlantic/Gulf)"
+    },
+    {
+        "name": "New Orleans",
+        "country": "USA",
+        "locode": "USMSY",
+        "region": "North America (Atlantic/Gulf)"
+    },
+    {
+        "name": "Tampa",
+        "country": "USA",
+        "locode": "USTPA",
+        "region": "North America (Atlantic/Gulf)"
+    },
+    {
+        "name": "Charleston",
+        "country": "USA",
+        "locode": "USCHS",
+        "region": "North America (Atlantic/Gulf)"
+    },
+    {
+        "name": "Boston",
+        "country": "USA",
+        "locode": "USBOS",
+        "region": "North America (Atlantic/Gulf)"
+    },
+    {
+        "name": "Baltimore",
+        "country": "USA",
+        "locode": "USBAL",
+        "region": "North America (Atlantic/Gulf)"
+    },
+    {
+        "name": "Nassau",
+        "country": "Bahamas",
+        "locode": "BSNAS",
+        "region": "Caribbean & Bahamas"
+    },
+    {
+        "name": "Cozumel",
+        "country": "Mexico",
+        "locode": "MXCZM",
+        "region": "Caribbean & Bahamas"
+    },
+    {
+        "name": "Philipsburg",
+        "country": "Sint Maarten",
+        "locode": "SXPHI",
+        "region": "Caribbean & Bahamas"
+    },
+    {
+        "name": "San Juan",
+        "country": "Puerto Rico",
+        "locode": "SJSJU",
+        "region": "Caribbean & Bahamas"
+    },
+    {
+        "name": "Charlotte Amalie",
+        "country": "US Virgin Islands",
+        "locode": "VISTT",
+        "region": "Caribbean & Bahamas"
+    },
+    {
+        "name": "George Town",
+        "country": "Cayman Islands",
+        "locode": "KYGCM",
+        "region": "Caribbean & Bahamas"
+    },
+    {
+        "name": "Roatán",
+        "country": "Honduras",
+        "locode": "HNRTB",
+        "region": "Caribbean & Bahamas"
+    },
+    {
+        "name": "Costa Maya",
+        "country": "Mexico",
+        "locode": "MXCMY",
+        "region": "Caribbean & Bahamas"
+    },
+    {
+        "name": "Amber Cove (Puerto Plata)",
+        "country": "Dominican Republic",
+        "locode": "DOPPU",
+        "region": "Caribbean & Bahamas"
+    },
+    {
+        "name": "Oranjestad",
+        "country": "Aruba",
+        "locode": "AWAUA",
+        "region": "Caribbean & Bahamas"
+    },
+    {
+        "name": "Willemstad",
+        "country": "Curaçao",
+        "locode": "CWCUR",
+        "region": "Caribbean & Bahamas"
+    },
+    {
+        "name": "Bridgetown",
+        "country": "Barbados",
+        "locode": "BBBGI",
+        "region": "Caribbean & Bahamas"
+    },
+    {
+        "name": "Castries",
+        "country": "St. Lucia",
+        "locode": "SLSLU",
+        "region": "Caribbean & Bahamas"
+    },
+    {
+        "name": "St. John's",
+        "country": "Antigua",
+        "locode": "AGANU",
+        "region": "Caribbean & Bahamas"
+    },
+    {
+        "name": "Kralendijk",
+        "country": "Bonaire",
+        "locode": "BQGRA",
+        "region": "Caribbean & Bahamas"
+    },
+    {
+        "name": "Fortaleza",
+        "country": "Brazil",
+        "locode": "BRFOR",
+        "region": "South America (Atlantic)"
+    },
+    {
+        "name": "Recife",
+        "country": "Brazil",
+        "locode": "BRREC",
+        "region": "South America (Atlantic)"
+    },
+    {
+        "name": "Salvador de Bahia",
+        "country": "Brazil",
+        "locode": "BRSSA",
+        "region": "South America (Atlantic)"
+    },
+    {
+        "name": "Rio de Janeiro",
+        "country": "Brazil",
+        "locode": "BRRJO",
+        "region": "South America (Atlantic)"
+    },
+    {
+        "name": "Santos (São Paulo)",
+        "country": "Brazil",
+        "locode": "BRSSZ",
+        "region": "South America (Atlantic)"
+    },
+    {
+        "name": "Buenos Aires",
+        "country": "Argentina",
+        "locode": "ARBUE",
+        "region": "South America (Atlantic)"
+    },
+    {
+        "name": "Montevideo",
+        "country": "Uruguay",
+        "locode": "UYMVD",
+        "region": "South America (Atlantic)"
+    },
+    {
+        "name": "Cartagena",
+        "country": "Colombia",
+        "locode": "COCTG",
+        "region": "South America (Atlantic)"
+    },
+    {
+        "name": "Ushuaia",
+        "country": "Argentina",
+        "locode": "ARUSH",
+        "region": "South America (Atlantic)"
+    },
+    {
+        "name": "Colón (Colon 2000)",
+        "country": "Panama",
+        "locode": "PAONX",
+        "region": "Panama Canal"
+    },
+    {
+        "name": "Cristóbal",
+        "country": "Panama",
+        "locode": "PACTB",
+        "region": "Panama Canal"
+    },
+    {
+        "name": "Fuerte Amador (Panama City)",
+        "country": "Panama",
+        "locode": "PAFMA",
+        "region": "Panama Canal"
+    },
+    {
+        "name": "Balboa (Panama City)",
+        "country": "Panama",
+        "locode": "PABLB",
+        "region": "Panama Canal"
+    },
+    {
+        "name": "Puerto Limón",
+        "country": "Costa Rica",
+        "locode": "CRLIO",
+        "region": "Panama Canal"
+    },
+    {
+        "name": "Puntarenas",
+        "country": "Costa Rica",
+        "locode": "CRPAS",
+        "region": "Panama Canal"
+    },
+    {
+        "name": "Istanbul (Galataport)",
+        "country": "Turkey",
+        "locode": "TRIST",
+        "region": "Mediterranean & Turkey"
+    },
+    {
+        "name": "Kusadasi (Ephesus)",
+        "country": "Turkey",
+        "locode": "TRKUS",
+        "region": "Mediterranean & Turkey"
+    },
+    {
+        "name": "Izmir",
+        "country": "Turkey",
+        "locode": "TRIZM",
+        "region": "Mediterranean & Turkey"
+    },
+    {
+        "name": "Antalya",
+        "country": "Turkey",
+        "locode": "TRAYT",
+        "region": "Mediterranean & Turkey"
+    },
+    {
+        "name": "Barcelona",
+        "country": "Spain",
+        "locode": "ESBCN",
+        "region": "Mediterranean & Turkey"
+    },
+    {
+        "name": "Civitavecchia (Rome)",
+        "country": "Italy",
+        "locode": "ITCVN",
+        "region": "Mediterranean & Turkey"
+    },
+    {
+        "name": "Marseille",
+        "country": "France",
+        "locode": "FRMRS",
+        "region": "Mediterranean & Turkey"
+    },
+    {
+        "name": "Naples",
+        "country": "Italy",
+        "locode": "ITNAP",
+        "region": "Mediterranean & Turkey"
+    },
+    {
+        "name": "Palma de Mallorca",
+        "country": "Spain",
+        "locode": "ESPMI",
+        "region": "Mediterranean & Turkey"
+    },
+    {
+        "name": "Genoa",
+        "country": "Italy",
+        "locode": "ITGOA",
+        "region": "Mediterranean & Turkey"
+    },
+    {
+        "name": "Livorno (Florence/Pisa)",
+        "country": "Italy",
+        "locode": "ITLIV",
+        "region": "Mediterranean & Turkey"
+    },
+    {
+        "name": "Valencia",
+        "country": "Spain",
+        "locode": "ESVLC",
+        "region": "Mediterranean & Turkey"
+    },
+    {
+        "name": "Piraeus (Athens)",
+        "country": "Greece",
+        "locode": "GRPIR",
+        "region": "Mediterranean & Turkey"
+    },
+    {
+        "name": "Venice (Ravenna/Marghera)",
+        "country": "Italy",
+        "locode": "ITVCE",
+        "region": "Mediterranean & Turkey"
+    },
+    {
+        "name": "Dubrovnik",
+        "country": "Croatia",
+        "locode": "HRDBV",
+        "region": "Mediterranean & Turkey"
+    },
+    {
+        "name": "Mykonos",
+        "country": "Greece",
+        "locode": "GRJMK",
+        "region": "Mediterranean & Turkey"
+    },
+    {
+        "name": "Santorini",
+        "country": "Greece",
+        "locode": "GRJTR",
+        "region": "Mediterranean & Turkey"
+    },
+    {
+        "name": "Limassol",
+        "country": "Cyprus",
+        "locode": "CYLMS",
+        "region": "Mediterranean & Turkey"
+    },
+    {
+        "name": "Rhodes",
+        "country": "Greece",
+        "locode": "GRRHO",
+        "region": "Mediterranean & Turkey"
+    },
+    {
+        "name": "Kotor",
+        "country": "Montenegro",
+        "locode": "MEKOT",
+        "region": "Mediterranean & Turkey"
+    },
+    {
+        "name": "Funchal",
+        "country": "Portugal (Madeira)",
+        "locode": "PTFNC",
+        "region": "Atlantic Islands"
+    },
+    {
+        "name": "Santa Cruz de Tenerife",
+        "country": "Spain (Canary Islands)",
+        "locode": "ESTCI",
+        "region": "Atlantic Islands"
+    },
+    {
+        "name": "Las Palmas",
+        "country": "Spain (Canary Islands)",
+        "locode": "ESLPA",
+        "region": "Atlantic Islands"
+    },
+    {
+        "name": "Ponta Delgada",
+        "country": "Portugal (Azores)",
+        "locode": "PTPDL",
+        "region": "Atlantic Islands"
+    },
+    {
+        "name": "Cadiz",
+        "country": "Spain",
+        "locode": "ESCAD",
+        "region": "Mediterranean & Turkey"
+    },
+    {
+        "name": "Malaga",
+        "country": "Spain",
+        "locode": "ESAGP",
+        "region": "Mediterranean & Turkey"
+    }
+]
