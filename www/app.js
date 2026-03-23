@@ -731,7 +731,7 @@ function checkCrossings(lat, lon, speedKnots) {
             if (window.Notification && Notification.permission === "granted") {
                 new Notification(targetName, {
                     body: "Approaching within " + distText,
-                    icon: "icons/icon-192x192.png"
+                    icon: "icons/icon-192.webp"
                 });
             }
             console.log("🔔 Systeem notificatie verstuurd!");
@@ -1290,17 +1290,22 @@ function renderTimeline() {
     // Herbereken datums: elk item is 1 dag verder
     let currentBaseDate = startInput && startInput.value ? new Date(startInput.value) : new Date();
 
-    CRUISE_TIMELINE.forEach((event, index) => {
-        // OVERLAY: Sla waypoints over in de visuele lijst
-        if (event.type === 'WAYPOINT') return;
+    for (let index = 0; index < CRUISE_TIMELINE.length; index++) {
+        const event = CRUISE_TIMELINE[index];
+        const nextEvent = index + 1 < CRUISE_TIMELINE.length ? CRUISE_TIMELINE[index + 1] : null;
 
-        // Update de event datum in het geheugen
+        if (event.type === 'WAYPOINT') continue;
+
+        let isCombined = false;
+        if (event.type === 'ARRIVAL' && nextEvent && nextEvent.type === 'DEPARTURE' && nextEvent.port === event.port) {
+             isCombined = true;
+        }
+
         const eventDate = new Date(currentBaseDate);
         if (event.type === 'SEA_DAY') {
             event.date = eventDate.toISOString().split('T')[0];
             event.time = null;
         } else {
-            // Voor havens houden we de originele tijd-uren vast als die er waren, anders default 08:00
             let hours = 8;
             let mins = 0;
             if (event.time) {
@@ -1311,12 +1316,25 @@ function renderTimeline() {
             eventDate.setHours(hours, mins, 0, 0);
             event.time = eventDate.toISOString();
             event.date = null;
+
+            if (isCombined) {
+                let h_dep = 18;
+                let m_dep = 0;
+                if (nextEvent.time) {
+                    const oldDate = new Date(nextEvent.time);
+                    h_dep = oldDate.getHours();
+                    m_dep = oldDate.getMinutes();
+                }
+                const depDate = new Date(currentBaseDate);
+                depDate.setHours(h_dep, m_dep, 0, 0);
+                nextEvent.time = depDate.toISOString();
+                nextEvent.date = null;
+            }
         }
 
         const card = document.createElement('div');
         card.className = `timeline-card ${event.type === 'SEA_DAY' ? 'sea-day' : ''}`;
 
-        // PASTAT DESIGN: Dim items in het verleden
         const nowAtStart = simulationDate ? new Date(simulationDate) : new Date();
         const eventDateObj = new Date(event.time || event.date);
         if (eventDateObj < nowAtStart) card.classList.add('past');
@@ -1325,21 +1343,15 @@ function renderTimeline() {
         card.draggable = true;
         card.dataset.index = index;
 
-
-        // Click handler voor selectie
         card.onclick = (e) => {
             if (e.target.classList.contains('delete-btn')) return;
             setManualTarget(index);
         };
 
-
-        // Desktop Drag events
         card.addEventListener('dragstart', handleDragStart);
         card.addEventListener('dragover', handleDragOver);
         card.addEventListener('drop', handleDrop);
         card.addEventListener('dragend', handleDragEnd);
-
-        // Mobile Touch events (Kerst op de taart fix)
         card.addEventListener('touchstart', handleTouchStart, { passive: false });
         card.addEventListener('touchmove', handleTouchMove, { passive: false });
         card.addEventListener('touchend', handleTouchEnd);
@@ -1347,28 +1359,23 @@ function renderTimeline() {
         const dateLabel = formatSimpleDate(event.time || event.date);
         const timeLabel = event.time ? new Date(event.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--";
 
-        // REALISM & WEATHER INTEGRATION
         let weatherIcon = '☀️';
         let temp = 24;
 
         if (event.port && timelineWeatherCache[event.port]) {
             const forecast = timelineWeatherCache[event.port];
-            const eventDate = new Date(event.time || event.date).toISOString().split('T')[0];
-            const dateIdx = forecast.time.indexOf(eventDate);
-
+            const eDate = new Date(event.time || event.date).toISOString().split('T')[0];
+            const dateIdx = forecast.time.indexOf(eDate);
             if (dateIdx !== -1) {
                 const code = forecast.weather_code[dateIdx];
                 temp = Math.round(forecast.temperature_2m_max[dateIdx]);
-                // Eenvoudige mapping van WMO codes
                 if (code > 3) weatherIcon = '🌧️';
                 else if (code > 0) weatherIcon = '⛅';
             } else {
-                // Fallback naar klimaat-gemiddelde (fictief voor nu)
                 temp = Math.floor(20 + Math.sin(index) * 5);
                 weatherIcon = index % 3 === 0 ? '⛅' : '☀️';
             }
         } else {
-            // Helemaal geen data: pseudo-random voor de "feel"
             temp = Math.floor(22 + Math.cos(index) * 3);
             weatherIcon = index % 5 === 0 ? '🌤️' : '☀️';
         }
@@ -1389,38 +1396,29 @@ function renderTimeline() {
                     <button class="delete-btn" onclick="removeTimelineEvent(${index})">×</button>
                 </div>
             `;
-        } else if (event.type === 'WAYPOINT') {
-            card.innerHTML = `
-                <div class="sea-icon">📍</div>
-                <div class="card-main">
-                    <div class="card-title">${event.name || "Waypoint"}</div>
-                    <div class="card-details">
-                        <div class="detail-item">
-                            <span class="detail-label">Location</span>
-                            <span class="detail-value">${event.coords.lat.toFixed(4)}, ${event.coords.lon.toFixed(4)}</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Date</span>
-                            <span class="detail-value">${dateLabel}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="right-actions" style="flex-direction: column; gap: 8px;">
-                    <button class="delete-btn" onclick="removeTimelineEvent(${index})">×</button>
-                    <button class="mini-icon-btn" onclick="event.stopPropagation(); moveWaypoint(${index})" title="Move to crosshair">🎯</button>
-                </div>
-            `;
         } else {
+            let timeLabelCombined = timeLabel;
+            if (isCombined) {
+                const timeDep = nextEvent.time ? new Date(nextEvent.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--";
+                timeLabelCombined = `${timeLabel} - ${timeDep}`;
+            }
+            
+            const badgeText = isCombined ? 'Port' : (event.type === 'ARRIVAL' ? 'Arrival' : 'Departure');
+
             card.innerHTML = `
                 <div class="card-main">
                     <div class="card-header">
                         <div class="card-title">${event.name || event.port}</div>
-                        <div class="status-badge status-port">${event.type === 'ARRIVAL' ? 'Arrival' : 'Departure'}</div>
+                        <div class="status-badge status-port">${badgeText}</div>
                     </div>
                     <div class="card-details">
                         <div class="detail-item">
                             <span class="detail-label">Date</span>
                             <span class="detail-value">${dateLabel}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Hours</span>
+                            <span class="detail-value">${timeLabelCombined}</span>
                         </div>
                     </div>
                 </div>
@@ -1436,9 +1434,11 @@ function renderTimeline() {
 
         container.appendChild(card);
 
-        // Dag ophogen voor het volgende item
+        if (isCombined) {
+            index++; 
+        }
         currentBaseDate.setDate(currentBaseDate.getDate() + 1);
-    });
+    }
 
     const updateScrollbar = () => {
         const hint = document.querySelector('.scroll-hint');
@@ -1635,18 +1635,41 @@ function triggerHaptic(type) {
 
 function reorderTimeline(from, to) {
     if (from === null || to === null) return;
+    const f = parseInt(from);
+    const t = parseInt(to);
 
     // Update manualTargetIndex if the item moved
-    if (manualTargetIndex === from) {
-        manualTargetIndex = to;
-    } else if (from < manualTargetIndex && to >= manualTargetIndex) {
+    if (manualTargetIndex === f) {
+        manualTargetIndex = t;
+    } else if (f < manualTargetIndex && t >= manualTargetIndex) {
         manualTargetIndex--;
-    } else if (from > manualTargetIndex && to <= manualTargetIndex) {
+    } else if (f > manualTargetIndex && t <= manualTargetIndex) {
         manualTargetIndex++;
     }
 
-    const item = CRUISE_TIMELINE.splice(from, 1)[0];
-    CRUISE_TIMELINE.splice(to, 0, item);
+    const event = CRUISE_TIMELINE[f];
+    const nextEvent = f + 1 < CRUISE_TIMELINE.length ? CRUISE_TIMELINE[f + 1] : null;
+    let isCombined = false;
+    
+    if (event && nextEvent && event.type === 'ARRIVAL' && nextEvent.type === 'DEPARTURE' && event.port === nextEvent.port) {
+        isCombined = true;
+    }
+
+    let items = [CRUISE_TIMELINE[f]];
+    if (isCombined) items.push(CRUISE_TIMELINE[f + 1]);
+
+    // Remove
+    CRUISE_TIMELINE.splice(f, isCombined ? 2 : 1);
+
+    // Insert
+    let insertAt = t;
+    if (f < t) {
+        // Elements shifted left after spline
+        insertAt = t - (isCombined ? 0 : 0); // No adjustment if from < to because index 'to' refers to the position PRE-splice
+        // Wait, if we drop on targetIndex, we want it inserted there!
+    }
+    
+    CRUISE_TIMELINE.splice(insertAt, 0, ...items);
     triggerHaptic('impactMedium');
     saveTimeline();
 
@@ -1663,7 +1686,13 @@ function removeTimelineEvent(index) {
     triggerHaptic('impactLight');
     showConfirmModal("Delete this stop?", () => {
         triggerHaptic('notificationError');
-        CRUISE_TIMELINE.splice(index, 1);
+        const evt = CRUISE_TIMELINE[index];
+        const nextEvt = index + 1 < CRUISE_TIMELINE.length ? CRUISE_TIMELINE[index + 1] : null;
+        let spliceCount = 1;
+        if (evt && nextEvt && evt.type === 'ARRIVAL' && nextEvt.type === 'DEPARTURE' && evt.port === nextEvt.port) {
+            spliceCount = 2;
+        }
+        CRUISE_TIMELINE.splice(index, spliceCount);
         if (manualTargetIndex === index) manualTargetIndex = null;
         else if (manualTargetIndex > index) manualTargetIndex--;
         saveTimeline();
