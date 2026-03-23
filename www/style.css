@@ -134,6 +134,7 @@ body {
     padding: var(--safe-top) 16px var(--safe-bottom) 16px;
     z-index: 2;
     pointer-events: none;
+    box-sizing: border-box; /* Fix: include padding in height calculation */
 }
 
 .spacer {
@@ -266,10 +267,9 @@ header {
 }
 
 .map-action-btn.wave-active {
-    background: rgba(0, 212, 255, 0.25);
     border-color: var(--accent-color);
-    box-shadow: 0 0 15px rgba(0, 212, 255, 0.6);
-    color: white;
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+    color: var(--accent-color);
 }
 
 .recenter-btn {
