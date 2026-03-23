@@ -1357,7 +1357,7 @@ function renderTimeline() {
         card.addEventListener('touchend', handleTouchEnd);
 
         const dateLabel = formatSimpleDate(event.time || event.date);
-        const timeLabel = event.time ? new Date(event.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--";
+        const timeLabel = event.time ? new Date(event.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) : "--:--";
 
         let weatherIcon = '☀️';
         let temp = 24;
@@ -1399,7 +1399,7 @@ function renderTimeline() {
         } else {
             let timeLabelCombined = timeLabel;
             if (isCombined) {
-                const timeDep = nextEvent.time ? new Date(nextEvent.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--";
+                const timeDep = nextEvent.time ? new Date(nextEvent.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) : "--:--";
                 timeLabelCombined = `${timeLabel} - ${timeDep}`;
             }
             
@@ -1850,6 +1850,11 @@ function saveTimeline() {
 }
 
 function loadTimeline() {
+    // Forceer eenmalige reset om caching van oude schema's te voorkomen
+    if (!localStorage.getItem('force_load_new_itinerary_v3')) {
+        localStorage.removeItem('cmp_cruise_timeline');
+        localStorage.setItem('force_load_new_itinerary_v3', 'true');
+    }
     const saved = localStorage.getItem('cmp_cruise_timeline');
     if (saved) {
         // Gebruik de variabele direct (NIET window.)

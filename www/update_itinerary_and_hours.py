@@ -1,4 +1,42 @@
-/* CRUISE TIMELINE
+import os
+
+filepath_app = "/Users/geertsimons/Library/Mobile Documents/com~apple~CloudDocs/Projects/cruise-dashboard/www/app.js"
+filepath_it = "/Users/geertsimons/Library/Mobile Documents/com~apple~CloudDocs/Projects/cruise-dashboard/www/itinerary.js"
+
+# 1. Update app.js
+with open(filepath_app, "r") as f:
+    app_content = f.read()
+
+# Replace LocaleTimeString to force 24h format
+target1 = "toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })"
+replacement1 = "toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })"
+
+app_content = app_content.replace(target1, replacement1)
+
+# Inject Cache Invalidation inside loadTimeline()
+target2 = """function loadTimeline() {
+    const saved = localStorage.getItem('cmp_cruise_timeline');"""
+
+replacement2 = """function loadTimeline() {
+    // Forceer eenmalige reset om caching van oude schema's te voorkomen
+    if (!localStorage.getItem('force_load_new_itinerary_v3')) {
+        localStorage.removeItem('cmp_cruise_timeline');
+        localStorage.setItem('force_load_new_itinerary_v3', 'true');
+    }
+    const saved = localStorage.getItem('cmp_cruise_timeline');"""
+
+if target2 in app_content:
+    app_content = app_content.replace(target2, replacement2)
+    print("Added cache invalidation inside loadTimeline()")
+else:
+    print("Could not find loadTimeline for cache override")
+
+with open(filepath_app, "w") as f:
+    f.write(app_content)
+
+
+# 2. Update itinerary.js to ensure exact CSV dump contents with 24h compatibility
+new_itinerary = """/* CRUISE TIMELINE
    A modern, event-based itinerary system.
 */
 
@@ -38,3 +76,9 @@ let CRUISE_TIMELINE = [
 
     { type: "ARRIVAL", port: "BARCELONA", name: "Barcelona, Spain", time: "2026-04-16T05:00:00Z" }
 ];
+"""
+
+with open(filepath_it, "w") as f:
+    f.write(new_itinerary)
+
+print("Updates complete")
