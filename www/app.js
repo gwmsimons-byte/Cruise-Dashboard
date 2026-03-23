@@ -1343,9 +1343,10 @@ function renderTimeline() {
         card.draggable = true;
         card.dataset.index = index;
 
+        const currentIndex = index; // Fix closure bug
         card.onclick = (e) => {
             if (e.target.classList.contains('delete-btn')) return;
-            setManualTarget(index);
+            setManualTarget(currentIndex);
         };
 
         card.addEventListener('dragstart', handleDragStart);
