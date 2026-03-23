@@ -160,5 +160,15 @@ def get_waves(
 
 
 
+
+from fastapi.responses import FileResponse
+
+@app.get("/")
+def read_index():
+    # Forceer directe weergave van index.html om root-resolvatie bugs te omzeilen
+    static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "www")
+    return FileResponse(os.path.join(static_dir, "index.html"))
+
+
 static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "www")
 app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
