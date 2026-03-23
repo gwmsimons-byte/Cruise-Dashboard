@@ -516,7 +516,7 @@ header {
 .ribbon-container {
     position: relative;
     height: 36px;
-    margin-bottom: 5px;
+    margin-bottom: 25px; /* Verhoogd om het lint hoger in het beeld te trekken */
 }
 
 .compass-ribbon-window {
