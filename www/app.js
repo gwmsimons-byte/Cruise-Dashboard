@@ -699,11 +699,6 @@ function checkCrossings(lat, lon, speedKnots) {
         targetName = "Equator Crossing";
         distNM = Math.abs(lat) * 60;
     }
-    // 2. Check Prime Meridian (Lon 0)
-    else if (Math.abs(lon) < threshold) {
-        targetName = "Prime Meridian Crossing";
-        distNM = Math.max(0.01, Math.abs(lon)) * 60 * Math.cos(lat * Math.PI / 180);
-    }
 
     if (targetName) {
         titleEl.innerText = targetName;
@@ -760,16 +755,6 @@ function simulateCrossing(type) {
                 longitude: currentPos.lon,
                 speed: 10,
                 heading: 0
-            }
-        });
-    } else if (type === 'meridian') {
-        // Vlakbij 0-meridiaan
-        handleSuccess({
-            coords: {
-                latitude: currentPos.lat,
-                longitude: 0.05,
-                speed: 10,
-                heading: 90
             }
         });
     }
@@ -1105,11 +1090,9 @@ function updateDistance() {
         // --- SLIMME LOGICA VOOR SEADAGEN ---
         if (!targetCoords) {
             const lowerName = targetName.toLowerCase();
-            // Is het een kruising (Evenaar/Meridiaan)?
+            // Is het een kruising (Evenaar)?
             if (lowerName.includes("equator") || lowerName.includes("evenaar")) {
                 targetCoords = { lat: 0, lon: currentPos.lon };
-            } else if (lowerName.includes("meridian") || lowerName.includes("meridiaan")) {
-                targetCoords = { lat: currentPos.lat, lon: 0 };
             } else {
                 // Geen specifieke plek? Toon afstand naar de eerstvolgende haven na deze seaday
                 for (let i = manualTargetIndex + 1; i < CRUISE_TIMELINE.length; i++) {

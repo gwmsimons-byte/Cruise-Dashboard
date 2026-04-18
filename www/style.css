@@ -1340,27 +1340,25 @@ body.night-mode #map {
 
 .crossing-alert {
     position: fixed;
-    top: calc(10px + env(safe-area-inset-top));
-    /* Hoger geplaatst */
-    left: 20px;
-    right: 20px;
+    top: calc(48px + env(safe-area-inset-top)); /* Uitgelijnd met de waypoint add button */
+    left: 16px; /* Gelijk met linkerzijde van status-group */
+    width: calc(50% + 70px); /* Gelijk met rechterzijde van header-heading (ongeveer) */
+    max-width: 300px; /* Zorg dat hij niet te breed wordt op grote schermen */
     background: rgba(0, 40, 60, 0.85);
-    /* Donkerdere achtergrond voor meer contrast */
     backdrop-filter: blur(25px) brightness(1.2);
     border: 1px solid rgba(0, 212, 255, 0.5);
-    border-radius: 16px;
-    padding: 16px;
+    border-radius: 12px;
+    padding: 8px 12px; /* Compacter */
     z-index: 10000;
-    /* Hoogste prioriteit */
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 6px; /* Minder ruimte tussen icon+tekst en progressbar */
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 212, 255, 0.2);
     transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.4s ease;
 }
 
 .crossing-alert.hidden {
-    transform: translateY(-150px) scale(0.9);
+    transform: translateY(-80px) scale(0.9);
     opacity: 0;
     pointer-events: none;
 }
@@ -1368,31 +1366,32 @@ body.night-mode #map {
 .alert-content {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px; /* Iets dichter op elkaar */
 }
 
 .alert-icon {
-    font-size: 1.8rem;
+    font-size: 1.4rem; /* Iets kleiner */
 }
 
 .alert-text h4 {
     margin: 0;
-    font-size: 1rem;
+    font-size: 0.85rem; /* Compacter */
     font-weight: 800;
     color: var(--accent-color);
 }
 
 .alert-text p {
-    margin: 2px 0 0 0;
-    font-size: 0.85rem;
+    margin: 0;
+    font-size: 0.75rem; /* Compacter */
     opacity: 0.8;
 }
 
 .alert-progress {
-    height: 4px;
+    height: 3px; /* Iets dunner */
     background: rgba(255, 255, 255, 0.1);
-    border-radius: 2px;
+    border-radius: 1.5px;
     overflow: hidden;
+    margin-top: 2px;
 }
 
 .progress-fill {
