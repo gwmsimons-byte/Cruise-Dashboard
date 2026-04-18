@@ -932,7 +932,7 @@ window.toggleZones = function() {
             'type': 'fill',
             'source': 'timezones-source',
             'paint': {
-                'fill-color': 'rgba(0, 212, 255, 0.04)',
+                'fill-color': 'rgba(0, 212, 255, 0.08)', /* Iets duidelijker */
                 'fill-opacity': 1
             }
         });
@@ -942,8 +942,8 @@ window.toggleZones = function() {
             'type': 'line',
             'source': 'timezones-source',
             'paint': {
-                'line-color': 'rgba(0, 212, 255, 0.3)',
-                'line-width': 1,
+                'line-color': 'rgba(0, 212, 255, 0.8)', /* Veel helderder blauw */
+                'line-width': 1.5,
                 'line-dasharray': [2, 2]
             }
         });
@@ -969,19 +969,20 @@ window.toggleDayNight = function() {
     dayNightVisible = !dayNightVisible;
     
     function updateTerminator() {
-        if (!map.getSource('terminator-source') || typeof GeoJSON === 'undefined') return;
+        if (!map.getSource('terminator-source') || typeof GeoJSONTerminator === 'undefined') return;
         try {
-            const terminatorObj = new GeoJSON.Terminator();
+            const terminatorObj = new GeoJSONTerminator();
+            // GeoJSONTerminator returns a GeoJSON object directly in this version
             map.getSource('terminator-source').setData(terminatorObj);
         } catch(e) {
             console.error('Terminator update failed', e);
         }
     }
 
-    if (!map.getSource('terminator-source') && typeof GeoJSON !== 'undefined') {
+    if (!map.getSource('terminator-source') && typeof GeoJSONTerminator !== 'undefined') {
         map.addSource('terminator-source', {
             type: 'geojson',
-            data: new GeoJSON.Terminator()
+            data: new GeoJSONTerminator()
         });
 
         map.addLayer({
@@ -993,6 +994,8 @@ window.toggleDayNight = function() {
                 'fill-opacity': 0.45
             }
         });
+    } else if (typeof GeoJSONTerminator === 'undefined') {
+        console.error("GeoJSONTerminator is not loaded. Check the script tag in index.html.");
     }
 
     const visibility = dayNightVisible ? 'visible' : 'none';
@@ -1002,7 +1005,7 @@ window.toggleDayNight = function() {
 
     if (dayNightVisible) {
         updateTerminator();
-        terminatorInterval = setInterval(updateTerminator, 300000); // 5 min
+        terminatorInterval = setInterval(updateTerminator, 60000); // Check every minute to be more accurate
     } else {
         if (terminatorInterval) clearInterval(terminatorInterval);
     }
