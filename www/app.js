@@ -935,15 +935,15 @@ window.toggleZones = function() {
                 'fill-color': [
                     'match',
                     ['get', 'map_color8'],
-                    1, 'rgba(255, 255, 255, 0.06)',
-                    2, 'rgba(0, 212, 255, 0.03)',
-                    3, 'rgba(150, 150, 150, 0.05)',
-                    4, 'rgba(0, 0, 0, 0.15)',
-                    5, 'rgba(255, 255, 255, 0.02)',
-                    6, 'rgba(0, 212, 255, 0.06)',
-                    7, 'rgba(80, 80, 80, 0.08)',
-                    8, 'rgba(0, 0, 0, 0.05)',
-                    'rgba(255, 255, 255, 0.05)'
+                    1, 'rgba(0, 212, 255, 0.15)',   /* Cyaan */
+                    2, 'rgba(191, 90, 242, 0.15)',  /* Paars */
+                    3, 'rgba(50, 215, 75, 0.15)',   /* Groen */
+                    4, 'rgba(255, 159, 10, 0.15)',  /* Oranje */
+                    5, 'rgba(255, 55, 95, 0.15)',   /* Roze */
+                    6, 'rgba(10, 132, 255, 0.15)',  /* Blauw */
+                    7, 'rgba(255, 214, 10, 0.15)',  /* Geel */
+                    8, 'rgba(0, 199, 190, 0.15)',   /* Mint */
+                    'rgba(255, 255, 255, 0.1)'
                 ],
                 'fill-opacity': 1
             }
@@ -954,9 +954,9 @@ window.toggleZones = function() {
             'type': 'line',
             'source': 'timezones-source',
             'paint': {
-                'line-color': 'rgba(180, 180, 180, 0.25)', /* Zachter grijs */
+                'line-color': 'rgba(255, 255, 255, 0.2)', /* Witte grenslijn */
                 'line-width': 1,
-                'line-dasharray': [4, 4] /* Ruimere streepjes, geen rivier */
+                'line-dasharray': [3, 3] 
             }
         });
     }
@@ -984,7 +984,6 @@ window.toggleDayNight = function() {
         if (!map.getSource('terminator-source') || typeof GeoJSONTerminator === 'undefined') return;
         try {
             const terminatorObj = new GeoJSONTerminator();
-            // GeoJSONTerminator returns a GeoJSON object directly in this version
             map.getSource('terminator-source').setData(terminatorObj);
         } catch(e) {
             console.error('Terminator update failed', e);
@@ -1007,19 +1006,6 @@ window.toggleDayNight = function() {
                 'fill-opacity': 0.45
             }
         });
-
-        // Hack voor een zachte overgang (gradient) op de rand
-        map.addLayer({
-            'id': 'terminator-blur',
-            'type': 'line',
-            'source': 'terminator-source',
-            'paint': {
-                'line-color': '#000000',
-                'line-width': 60, /* Brede rand */
-                'line-blur': 30,  /* Grote blur om gradient te maken */
-                'line-opacity': 0.45
-            }
-        });
     } else if (typeof GeoJSONTerminator === 'undefined') {
         console.error("GeoJSONTerminator is not loaded. Check the script tag in index.html.");
     }
@@ -1027,9 +1013,6 @@ window.toggleDayNight = function() {
     const visibility = dayNightVisible ? 'visible' : 'none';
     if (map.getLayer('terminator-layer')) {
         map.setLayoutProperty('terminator-layer', 'visibility', visibility);
-    }
-    if (map.getLayer('terminator-blur')) {
-        map.setLayoutProperty('terminator-blur', 'visibility', visibility);
     }
 
     if (dayNightVisible) {
