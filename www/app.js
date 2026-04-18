@@ -932,7 +932,19 @@ window.toggleZones = function() {
             'type': 'fill',
             'source': 'timezones-source',
             'paint': {
-                'fill-color': 'rgba(0, 212, 255, 0.08)', /* Iets duidelijker */
+                'fill-color': [
+                    'match',
+                    ['get', 'map_color8'],
+                    1, 'rgba(255, 255, 255, 0.06)',
+                    2, 'rgba(0, 212, 255, 0.03)',
+                    3, 'rgba(150, 150, 150, 0.05)',
+                    4, 'rgba(0, 0, 0, 0.15)',
+                    5, 'rgba(255, 255, 255, 0.02)',
+                    6, 'rgba(0, 212, 255, 0.06)',
+                    7, 'rgba(80, 80, 80, 0.08)',
+                    8, 'rgba(0, 0, 0, 0.05)',
+                    'rgba(255, 255, 255, 0.05)'
+                ],
                 'fill-opacity': 1
             }
         });
@@ -942,9 +954,9 @@ window.toggleZones = function() {
             'type': 'line',
             'source': 'timezones-source',
             'paint': {
-                'line-color': 'rgba(0, 212, 255, 0.8)', /* Veel helderder blauw */
-                'line-width': 1.5,
-                'line-dasharray': [2, 2]
+                'line-color': 'rgba(180, 180, 180, 0.25)', /* Zachter grijs */
+                'line-width': 1,
+                'line-dasharray': [4, 4] /* Ruimere streepjes, geen rivier */
             }
         });
     }
@@ -985,6 +997,7 @@ window.toggleDayNight = function() {
             data: new GeoJSONTerminator()
         });
 
+        // Echte schaduw fill
         map.addLayer({
             'id': 'terminator-layer',
             'type': 'fill',
@@ -994,6 +1007,19 @@ window.toggleDayNight = function() {
                 'fill-opacity': 0.45
             }
         });
+
+        // Hack voor een zachte overgang (gradient) op de rand
+        map.addLayer({
+            'id': 'terminator-blur',
+            'type': 'line',
+            'source': 'terminator-source',
+            'paint': {
+                'line-color': '#000000',
+                'line-width': 60, /* Brede rand */
+                'line-blur': 30,  /* Grote blur om gradient te maken */
+                'line-opacity': 0.45
+            }
+        });
     } else if (typeof GeoJSONTerminator === 'undefined') {
         console.error("GeoJSONTerminator is not loaded. Check the script tag in index.html.");
     }
@@ -1001,6 +1027,9 @@ window.toggleDayNight = function() {
     const visibility = dayNightVisible ? 'visible' : 'none';
     if (map.getLayer('terminator-layer')) {
         map.setLayoutProperty('terminator-layer', 'visibility', visibility);
+    }
+    if (map.getLayer('terminator-blur')) {
+        map.setLayoutProperty('terminator-blur', 'visibility', visibility);
     }
 
     if (dayNightVisible) {
