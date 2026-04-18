@@ -266,7 +266,19 @@ header {
     transition: all 0.3s ease;
 }
 
-.map-action-btn.wave-active {
+.map-action-btn.standalone.tz-toggle {
+    top: calc(var(--safe-top) + 140px); 
+    transition: all 0.3s ease;
+}
+
+.map-action-btn.standalone.dn-toggle {
+    top: calc(var(--safe-top) + 186px);
+    transition: all 0.3s ease;
+}
+
+.map-action-btn.wave-active,
+.map-action-btn.tz-active,
+.map-action-btn.dn-active {
     border-color: var(--accent-color);
     box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
     color: var(--accent-color);

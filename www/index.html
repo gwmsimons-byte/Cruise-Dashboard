@@ -13,6 +13,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
+    <script src="https://unpkg.com/@webgeodatavore/geojson.terminator@1.0.2/GeoJSON.Terminator.js"></script>
 </head>
 
 <body>
@@ -26,6 +27,16 @@
     <button id="waveToggleBtn" class="map-action-btn standalone wave-toggle wave-active" onclick="toggleWaves()"
         title="Toggle Wave Overlay">
         <span>🌊</span>
+    </button>
+
+    <button id="tzToggleBtn" class="map-action-btn standalone tz-toggle" onclick="toggleZones()"
+        title="Toggle Time Zones">
+        <span>🌐</span>
+    </button>
+
+    <button id="dayNightToggleBtn" class="map-action-btn standalone dn-toggle" onclick="toggleDayNight()"
+        title="Toggle Day/Night Terminator">
+        <span>🌓</span>
     </button>
 
     <div class="hud-container">

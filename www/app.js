@@ -915,6 +915,105 @@ window.toggleWaves = function() {
     }
 }
 
+// === TIMEZONES OVERLAY (Option 2) ===
+let zonesVisible = false;
+window.toggleZones = function() {
+    if (!map || !map.isStyleLoaded()) return;
+    zonesVisible = !zonesVisible;
+    
+    if (!map.getSource('timezones-source')) {
+        map.addSource('timezones-source', {
+            type: 'geojson',
+            data: 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_time_zones.geojson'
+        });
+        
+        map.addLayer({
+            'id': 'timezones-fill',
+            'type': 'fill',
+            'source': 'timezones-source',
+            'paint': {
+                'fill-color': 'rgba(0, 212, 255, 0.04)',
+                'fill-opacity': 1
+            }
+        });
+
+        map.addLayer({
+            'id': 'timezones-line',
+            'type': 'line',
+            'source': 'timezones-source',
+            'paint': {
+                'line-color': 'rgba(0, 212, 255, 0.3)',
+                'line-width': 1,
+                'line-dasharray': [2, 2]
+            }
+        });
+    }
+
+    const visibility = zonesVisible ? 'visible' : 'none';
+    if (map.getLayer('timezones-fill')) map.setLayoutProperty('timezones-fill', 'visibility', visibility);
+    if (map.getLayer('timezones-line')) map.setLayoutProperty('timezones-line', 'visibility', visibility);
+
+    const btn = document.getElementById('tzToggleBtn');
+    if (btn) {
+        if (zonesVisible) btn.classList.add('tz-active');
+        else btn.classList.remove('tz-active');
+    }
+}
+
+// === DAY/NIGHT TERMINATOR OVERLAY (Option 3) ===
+let dayNightVisible = false;
+let terminatorInterval;
+
+window.toggleDayNight = function() {
+    if (!map || !map.isStyleLoaded()) return;
+    dayNightVisible = !dayNightVisible;
+    
+    function updateTerminator() {
+        if (!map.getSource('terminator-source') || typeof GeoJSON === 'undefined') return;
+        try {
+            const terminatorObj = new GeoJSON.Terminator();
+            map.getSource('terminator-source').setData(terminatorObj);
+        } catch(e) {
+            console.error('Terminator update failed', e);
+        }
+    }
+
+    if (!map.getSource('terminator-source') && typeof GeoJSON !== 'undefined') {
+        map.addSource('terminator-source', {
+            type: 'geojson',
+            data: new GeoJSON.Terminator()
+        });
+
+        map.addLayer({
+            'id': 'terminator-layer',
+            'type': 'fill',
+            'source': 'terminator-source',
+            'paint': {
+                'fill-color': '#000000',
+                'fill-opacity': 0.45
+            }
+        });
+    }
+
+    const visibility = dayNightVisible ? 'visible' : 'none';
+    if (map.getLayer('terminator-layer')) {
+        map.setLayoutProperty('terminator-layer', 'visibility', visibility);
+    }
+
+    if (dayNightVisible) {
+        updateTerminator();
+        terminatorInterval = setInterval(updateTerminator, 300000); // 5 min
+    } else {
+        if (terminatorInterval) clearInterval(terminatorInterval);
+    }
+
+    const btn = document.getElementById('dayNightToggleBtn');
+    if (btn) {
+        if (dayNightVisible) btn.classList.add('dn-active');
+        else btn.classList.remove('dn-active');
+    }
+}
+
 function updateWeatherUI(wind, waves, timestamp = Date.now(), saveToCache = true) {
     const windEl = document.getElementById('wind');
     const waveEl = document.getElementById('golven');
