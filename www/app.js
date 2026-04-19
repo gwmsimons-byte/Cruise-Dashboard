@@ -972,52 +972,99 @@ window.toggleZones = function() {
     }
 }
 
-// === DAY/NIGHT TERMINATOR OVERLAY (Option 3) ===
+// === DAY/NIGHT TERMINATOR OVERLAY — Multi-layer Twilight Gradient ===
 let dayNightVisible = false;
 let terminatorInterval;
+
+// Berekent de nacht-polygon voor een gegeven zonne-hoogte drempel
+function computeTerminatorPolygon(date, solarAltDeg) {
+    const D2R = Math.PI / 180;
+    const R2D = 180 / Math.PI;
+    const d = (date / 86400000) + 2440587.5 - 2451545.0;
+    const g = (357.529 + 0.98560028 * d) * D2R;
+    const q = 280.459 + 0.98564736 * d;
+    const L = (q + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g)) * D2R;
+    const e = 23.439 * D2R;
+    const dec = Math.asin(Math.sin(e) * Math.sin(L));
+    const GMST = ((18.697374558 + 24.06570982441908 * d) % 24 + 24) % 24;
+    const GHA = GMST * 15 * D2R;
+    const sinDec = Math.sin(dec);
+    const cosDec = Math.cos(dec);
+    const sinAlt = Math.sin(solarAltDeg * D2R);
+
+    const coords = [];
+    for (let lon = -180; lon <= 180; lon += 1) {
+        const cosHA = Math.cos(GHA - lon * D2R);
+        const R = Math.sqrt(sinDec * sinDec + cosDec * cosDec * cosHA * cosHA);
+        if (R < 1e-10) continue;
+        const sinVal = sinAlt / R;
+        if (Math.abs(sinVal) > 1) continue;
+        const phi = Math.atan2(cosDec * cosHA, sinDec);
+        const lat = Math.asin(sinVal) - phi;
+        coords.push([lon, Math.max(-89.9, Math.min(89.9, lat * R2D))]);
+    }
+    if (coords.length < 3) return null;
+
+    const nightPole = dec > 0 ? -90 : 90;
+    const ring = [...coords, [180, nightPole], [-180, nightPole], coords[0]];
+    return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [ring] } };
+}
+
+// Vier lagen: civiel, nautisch, astronomisch, volle nacht
+const TWILIGHT_LAYERS = [
+    { id: 'dn-civil',        alt:   0, opacity: 0.10 },
+    { id: 'dn-nautical',     alt:  -6, opacity: 0.16 },
+    { id: 'dn-astronomical', alt: -12, opacity: 0.22 },
+    { id: 'dn-night',        alt: -18, opacity: 0.38 },
+];
+
+function updateAllTerminatorLayers() {
+    const now = Date.now();
+    TWILIGHT_LAYERS.forEach(layer => {
+        const src = map.getSource(layer.id + '-src');
+        if (!src) return;
+        const poly = computeTerminatorPolygon(now, layer.alt);
+        src.setData(poly
+            ? { type: 'FeatureCollection', features: [poly] }
+            : { type: 'FeatureCollection', features: [] });
+    });
+}
 
 window.toggleDayNight = function() {
     if (!map || !map.isStyleLoaded()) return;
     dayNightVisible = !dayNightVisible;
-    
-    function updateTerminator() {
-        if (!map.getSource('terminator-source') || typeof GeoJSONTerminator === 'undefined') return;
-        try {
-            const terminatorObj = new GeoJSONTerminator();
-            map.getSource('terminator-source').setData(terminatorObj);
-        } catch(e) {
-            console.error('Terminator update failed', e);
-        }
-    }
 
-    if (!map.getSource('terminator-source') && typeof GeoJSONTerminator !== 'undefined') {
-        map.addSource('terminator-source', {
-            type: 'geojson',
-            data: new GeoJSONTerminator()
+    // Eenmalig aanmaken van de 4 lagen
+    if (!map.getSource(TWILIGHT_LAYERS[0].id + '-src')) {
+        const now = Date.now();
+        TWILIGHT_LAYERS.forEach(layer => {
+            const poly = computeTerminatorPolygon(now, layer.alt);
+            map.addSource(layer.id + '-src', {
+                type: 'geojson',
+                data: poly
+                    ? { type: 'FeatureCollection', features: [poly] }
+                    : { type: 'FeatureCollection', features: [] }
+            });
+            map.addLayer({
+                id: layer.id,
+                type: 'fill',
+                source: layer.id + '-src',
+                paint: {
+                    'fill-color': '#000720',
+                    'fill-opacity': layer.opacity
+                }
+            });
         });
-
-        // Echte schaduw fill
-        map.addLayer({
-            'id': 'terminator-layer',
-            'type': 'fill',
-            'source': 'terminator-source',
-            'paint': {
-                'fill-color': '#000000',
-                'fill-opacity': 0.45
-            }
-        });
-    } else if (typeof GeoJSONTerminator === 'undefined') {
-        console.error("GeoJSONTerminator is not loaded. Check the script tag in index.html.");
     }
 
     const visibility = dayNightVisible ? 'visible' : 'none';
-    if (map.getLayer('terminator-layer')) {
-        map.setLayoutProperty('terminator-layer', 'visibility', visibility);
-    }
+    TWILIGHT_LAYERS.forEach(layer => {
+        if (map.getLayer(layer.id)) map.setLayoutProperty(layer.id, 'visibility', visibility);
+    });
 
     if (dayNightVisible) {
-        updateTerminator();
-        terminatorInterval = setInterval(updateTerminator, 60000); // Check every minute to be more accurate
+        updateAllTerminatorLayers();
+        terminatorInterval = setInterval(updateAllTerminatorLayers, 60000);
     } else {
         if (terminatorInterval) clearInterval(terminatorInterval);
     }
