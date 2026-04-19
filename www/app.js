@@ -972,14 +972,12 @@ window.toggleZones = function() {
     }
 }
 
-// === DAY/NIGHT TERMINATOR OVERLAY — Multi-layer Twilight Gradient ===
+// === DAY/NIGHT TERMINATOR — Canvas Raster met echte pixel-voor-pixel gradient ===
 let dayNightVisible = false;
 let terminatorInterval;
 
-// Berekent de nacht-polygon voor een gegeven zonne-hoogte drempel
-function computeTerminatorPolygon(date, solarAltDeg) {
+function computeSunDeclination(date) {
     const D2R = Math.PI / 180;
-    const R2D = 180 / Math.PI;
     const d = (date / 86400000) + 2440587.5 - 2451545.0;
     const g = (357.529 + 0.98560028 * d) * D2R;
     const q = 280.459 + 0.98564736 * d;
@@ -988,83 +986,86 @@ function computeTerminatorPolygon(date, solarAltDeg) {
     const dec = Math.asin(Math.sin(e) * Math.sin(L));
     const GMST = ((18.697374558 + 24.06570982441908 * d) % 24 + 24) % 24;
     const GHA = GMST * 15 * D2R;
-    const sinDec = Math.sin(dec);
-    const cosDec = Math.cos(dec);
-    const sinAlt = Math.sin(solarAltDeg * D2R);
-
-    const coords = [];
-    for (let lon = -180; lon <= 180; lon += 1) {
-        const cosHA = Math.cos(GHA - lon * D2R);
-        const R = Math.sqrt(sinDec * sinDec + cosDec * cosDec * cosHA * cosHA);
-        if (R < 1e-10) continue;
-        const sinVal = sinAlt / R;
-        if (Math.abs(sinVal) > 1) continue;
-        const phi = Math.atan2(cosDec * cosHA, sinDec);
-        const lat = Math.asin(sinVal) - phi;
-        coords.push([lon, Math.max(-89.9, Math.min(89.9, lat * R2D))]);
-    }
-    if (coords.length < 3) return null;
-
-    const nightPole = dec > 0 ? -90 : 90;
-    const ring = [...coords, [180, nightPole], [-180, nightPole], coords[0]];
-    return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [ring] } };
+    return { dec, GHA };
 }
 
-// Vier lagen: civiel, nautisch, astronomisch, volle nacht
-const TWILIGHT_LAYERS = [
-    { id: 'dn-civil',        alt:   0, opacity: 0.10 },
-    { id: 'dn-nautical',     alt:  -6, opacity: 0.16 },
-    { id: 'dn-astronomical', alt: -12, opacity: 0.22 },
-    { id: 'dn-night',        alt: -18, opacity: 0.38 },
-];
+function buildTerminatorCanvas(date) {
+    const W = 1024, H = 512;
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const { dec, GHA } = computeSunDeclination(date);
+    const D2R = Math.PI / 180;
+    const sinDec = Math.sin(dec), cosDec = Math.cos(dec);
 
-function updateAllTerminatorLayers() {
-    const now = Date.now();
-    TWILIGHT_LAYERS.forEach(layer => {
-        const src = map.getSource(layer.id + '-src');
-        if (!src) return;
-        const poly = computeTerminatorPolygon(now, layer.alt);
-        src.setData(poly
-            ? { type: 'FeatureCollection', features: [poly] }
-            : { type: 'FeatureCollection', features: [] });
-    });
+    const imgData = ctx.createImageData(W, H);
+    const data = imgData.data;
+
+    for (let py = 0; py < H; py++) {
+        const lat = (0.5 - py / H) * Math.PI; // -π/2 tot π/2
+        const sinLat = Math.sin(lat), cosLat = Math.cos(lat);
+        for (let px = 0; px < W; px++) {
+            const lon = (px / W - 0.5) * 2 * Math.PI; // -π tot π
+            const HA = GHA - lon;
+            // Zonne-hoogte in graden
+            const sinAlt = sinLat * sinDec + cosLat * cosDec * Math.cos(HA);
+            const altDeg = Math.asin(Math.max(-1, Math.min(1, sinAlt))) / D2R;
+
+            let alpha = 0;
+            if (altDeg < 0) {
+                // Smoothstep gradient van horizon (0°) tot astronomische nacht (-18°)
+                const t = Math.min(1, altDeg / -18);
+                // Cubic smoothstep: heel vloeiend, geen harde kanten
+                const smooth = t * t * (3 - 2 * t);
+                alpha = Math.round(smooth * 175); // max 175/255 ≈ 68% opaciteit
+            }
+
+            const idx = (py * W + px) * 4;
+            data[idx]     = 0;   // R
+            data[idx + 1] = 7;   // G
+            data[idx + 2] = 32;  // B — donkerblauw (middernacht)
+            data[idx + 3] = alpha;
+        }
+    }
+    ctx.putImageData(imgData, 0, 0);
+    return canvas.toDataURL('image/png');
+}
+
+// Hoeken voor de full-world image overlay in Mapbox (equirectangular)
+const TERMINATOR_COORDS = [[-180, 85.051129], [180, 85.051129], [180, -85.051129], [-180, -85.051129]];
+
+function updateTerminatorCanvas() {
+    const src = map.getSource('terminator-canvas-src');
+    if (!src) return;
+    src.updateImage({ url: buildTerminatorCanvas(Date.now()), coordinates: TERMINATOR_COORDS });
 }
 
 window.toggleDayNight = function() {
     if (!map || !map.isStyleLoaded()) return;
     dayNightVisible = !dayNightVisible;
 
-    // Eenmalig aanmaken van de 4 lagen
-    if (!map.getSource(TWILIGHT_LAYERS[0].id + '-src')) {
-        const now = Date.now();
-        TWILIGHT_LAYERS.forEach(layer => {
-            const poly = computeTerminatorPolygon(now, layer.alt);
-            map.addSource(layer.id + '-src', {
-                type: 'geojson',
-                data: poly
-                    ? { type: 'FeatureCollection', features: [poly] }
-                    : { type: 'FeatureCollection', features: [] }
-            });
-            map.addLayer({
-                id: layer.id,
-                type: 'fill',
-                source: layer.id + '-src',
-                paint: {
-                    'fill-color': '#000720',
-                    'fill-opacity': layer.opacity
-                }
-            });
+    if (!map.getSource('terminator-canvas-src')) {
+        map.addSource('terminator-canvas-src', {
+            type: 'image',
+            url: buildTerminatorCanvas(Date.now()),
+            coordinates: TERMINATOR_COORDS
+        });
+        map.addLayer({
+            id: 'terminator-canvas-layer',
+            type: 'raster',
+            source: 'terminator-canvas-src',
+            paint: { 'raster-opacity': 1, 'raster-fade-duration': 500 }
         });
     }
 
     const visibility = dayNightVisible ? 'visible' : 'none';
-    TWILIGHT_LAYERS.forEach(layer => {
-        if (map.getLayer(layer.id)) map.setLayoutProperty(layer.id, 'visibility', visibility);
-    });
+    if (map.getLayer('terminator-canvas-layer')) {
+        map.setLayoutProperty('terminator-canvas-layer', 'visibility', visibility);
+    }
 
     if (dayNightVisible) {
-        updateAllTerminatorLayers();
-        terminatorInterval = setInterval(updateAllTerminatorLayers, 60000);
+        updateTerminatorCanvas();
+        terminatorInterval = setInterval(updateTerminatorCanvas, 60000);
     } else {
         if (terminatorInterval) clearInterval(terminatorInterval);
     }
