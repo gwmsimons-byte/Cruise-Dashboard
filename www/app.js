@@ -861,6 +861,32 @@ async function fetchMarineData(lat, lon, force = false) {
 async function fetchGlobalWaves() {
     if (!map || !map.isStyleLoaded() || !wavesVisible) return;
 
+    // Haal de huidige kaartgrenzen op om het venster te bepalen
+    const bounds = map.getBounds();
+    const min_lon = bounds.getWest();
+    const max_lon = bounds.getEast();
+    const min_lat = bounds.getSouth();
+    const max_lat = bounds.getNorth();
+
+    // 1. Probeer eerst de lokale Python API aan te roepen (zoals voorheen op Koyeb).
+    // Dit geeft de dichte, gedetailleerde golfdata uit het NOAA GRIB-bestand.
+    try {
+        const localUrl = `/api/waves?min_lon=${min_lon}&max_lon=${max_lon}&min_lat=${min_lat}&max_lat=${max_lat}&min_height=2.0`;
+        const res = await fetch(localUrl);
+        if (res.ok) {
+            const geojson = await res.json();
+            const source = map.getSource('waves-source');
+            if (source) {
+                source.setData(geojson);
+            }
+            return; // Succes met de Python API, we slaan de Open-Meteo fallback over!
+        }
+    } catch (localErr) {
+        // Lokale API is niet beschikbaar, we gaan door naar de Open-Meteo fallback
+        console.log("ℹ️ Lokale Python API niet bereikbaar, fallback naar Open-Meteo...");
+    }
+
+    // 2. FALLBACK: Client-side Open-Meteo Marine API (gebruikt grid en is minder dicht)
     // Harde throttle-bescherming tegen Open-Meteo HTTP 429 (maximaal 1 verzoek per 3 seconden)
     const now = Date.now();
     const minInterval = 3000;
@@ -871,13 +897,6 @@ async function fetchGlobalWaves() {
         return;
     }
     lastGlobalWavesFetch = now;
-
-    // Haal de huidige kaartgrenzen op om het venster te bepalen
-    const bounds = map.getBounds();
-    const min_lon = bounds.getWest();
-    const max_lon = bounds.getEast();
-    const min_lat = bounds.getSouth();
-    const max_lat = bounds.getNorth();
 
     // Bouw een grid van 9x9 (81 coördinaten) over het zichtbare scherm
     // We gebruiken 9x9 omdat Open-Meteo maximaal 100 punten per API-call toestaat.
@@ -894,9 +913,9 @@ async function fetchGlobalWaves() {
             let lat = min_lat + i * latStep;
             let lon = min_lon + j * lonStep;
             
-            // Limiteer latitude tot polen
+            // Limiteer latitude tot polen (Open-Meteo Marine API ondersteunt tot -80 graden)
             if (lat > 90) lat = 90;
-            if (lat < -90) lat = -90;
+            if (lat < -80) lat = -80;
             // Normaliseer longitude tussen -180 en +180 voor de API
             let normLon = ((lon + 180) % 360 + 360) % 360 - 180;
             
