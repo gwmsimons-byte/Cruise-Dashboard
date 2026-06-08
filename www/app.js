@@ -853,49 +853,82 @@ async function fetchMarineData(lat, lon, force = false) {
 }
 
 async function fetchGlobalWaves() {
-    // 1. Actuele positie ophalen. 'currentPos' bevat de huidige locatie als de GPS actief is.
-    const lat = (typeof currentPos !== 'undefined' && currentPos.lat) ? currentPos.lat : (settings.lastWeatherLat || 0);
-    const lon = (typeof currentPos !== 'undefined' && currentPos.lon) ? currentPos.lon : (settings.lastWeatherLon || 0);
+    if (!map || !map.isStyleLoaded() || !wavesVisible) return;
 
-    // 2. Open-Meteo Marine API endpoint
-    const url = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&current=wave_height`;
+    // Haal de huidige kaartgrenzen op om het venster te bepalen
+    const bounds = map.getBounds();
+    const min_lon = bounds.getWest();
+    const max_lon = bounds.getEast();
+    const min_lat = bounds.getSouth();
+    const max_lat = bounds.getNorth();
+
+    // Bouw een grid van 8x8 (64 coördinaten) over het zichtbare scherm
+    // Omdat de lokale Python GRIB-API niet meer beschikbaar is, vragen we dit on-the-fly aan Open-Meteo.
+    const latStep = (max_lat - min_lat) / 7;
+    const lonStep = (max_lon - min_lon) / 7;
+
+    const lats = [];
+    const lons = [];
+
+    for (let i = 0; i <= 7; i++) {
+        for (let j = 0; j <= 7; j++) {
+            let lat = min_lat + i * latStep;
+            let lon = min_lon + j * lonStep;
+            
+            // Limiteer latitude tot polen
+            if (lat > 90) lat = 90;
+            if (lat < -90) lat = -90;
+            // Normaliseer longitude tussen -180 en +180
+            let normLon = ((lon + 180) % 360 + 360) % 360 - 180;
+            
+            lats.push(lat.toFixed(2));
+            lons.push(normLon.toFixed(2));
+        }
+    }
+
+    // Open-Meteo accepteert meerdere coördinaten tegelijk via een komma-gescheiden lijst
+    const url = `https://marine-api.open-meteo.com/v1/marine?latitude=${lats.join(',')}&longitude=${lons.join(',')}&current=wave_height,wave_direction`;
 
     try {
         const res = await fetch(url);
         if (!res.ok) throw new Error(`Netwerkfout: ${res.status}`);
         
-        const data = await res.json();
+        const dataArray = await res.json();
+        // De API geeft een array terug bij multi-point query (of een enkel object bij 1 punt)
+        const results = Array.isArray(dataArray) ? dataArray : [dataArray];
         
-        // 3. Parse JSON en update de bestaande UI elementen
-        if (data && data.current && typeof data.current.wave_height !== 'undefined') {
-            const waveHeight = data.current.wave_height;
-            
-            const waveEl = document.getElementById('golven');
-            
-            if (waveHeight !== null) {
-                if (waveEl) {
-                    // Toon afronding tot 1 decimaal op het dashboard
-                    waveEl.innerText = waveHeight.toFixed(1);
-                }
-                
-                // Sla op in cache zodat andere functies dit ook kunnen gebruiken
-                settings.cachedWaves = waveHeight;
-                if (waveHeight > settings.maxWaves) { 
-                    settings.maxWaves = waveHeight; 
-                    localStorage.setItem('cmp_maxWaves', waveHeight); 
-                    if (typeof updateRecordsUI === 'function') updateRecordsUI();
-                }
-            } else {
-                // Op land of buiten maritiem dekkingsgebied geeft API 'null'
-                console.log('ℹ️ Actuele locatie is waarschijnlijk op land (golfhoogte is null).');
-                if (waveEl) waveEl.innerText = '--';
+        const features = [];
+        
+        for (let i = 0; i < results.length; i++) {
+            const data = results[i];
+            // Alleen toevoegen als het punt op zee ligt (wave_height is dan niet null)
+            if (data && data.current && data.current.wave_height !== null) {
+                features.push({
+                    type: 'Feature',
+                    geometry: {
+                        type: 'Point',
+                        coordinates: [parseFloat(lons[i]), parseFloat(lats[i])]
+                    },
+                    properties: {
+                        swh: data.current.wave_height,
+                        dirpw: data.current.wave_direction !== null ? data.current.wave_direction : 0
+                    }
+                });
             }
-        } else {
-            console.warn('⚠️ Geen geldige wave_height gevonden in de Open-Meteo data.');
+        }
+        
+        // Transformeer de punten in een geldige GeoJSON voor Mapbox
+        const geojson = {
+            type: 'FeatureCollection',
+            features: features
+        };
+        
+        const source = map.getSource('waves-source');
+        if (source) {
+            source.setData(geojson);
         }
     } catch (e) {
-        // 4. Foutafhandeling netjes in de console loggen
-        console.warn('⚠️ Ophalen van actuele golfhoogte via Open-Meteo mislukt:', e);
+        console.warn('⚠️ Ophalen van wereldwijde golven grid via Open-Meteo mislukt:', e);
     }
 }
 
@@ -2213,7 +2246,9 @@ function closeSettings() { document.getElementById('settings-overlay').classList
 function recenterMap() {
     isFollowing = true;
     document.getElementById('recenterBtn').classList.add('hidden');
-    map.flyTo({ center: [lon, lat], zoom: 11 });
+    if (typeof currentPos !== 'undefined' && currentPos.lat && currentPos.lon) {
+        map.flyTo({ center: [currentPos.lon, currentPos.lat], zoom: 11 });
+    }
     loadWeatherCache(); // Herstel de echte weerdata van het schip
 }
 function stopFollowing() { isFollowing = false; document.getElementById('recenterBtn').classList.remove('hidden'); }
