@@ -1035,7 +1035,8 @@ async function initRadar() {
                 map.addSource('radar-source', {
                     type: 'raster',
                     tiles: [tileUrl],
-                    tileSize: 256
+                    tileSize: 256,
+                    maxzoom: 7
                 });
             } else {
                 const source = map.getSource('radar-source');
