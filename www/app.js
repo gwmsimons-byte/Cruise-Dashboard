@@ -871,17 +871,24 @@ async function fetchGlobalWaves() {
             const waveHeight = data.current.wave_height;
             
             const waveEl = document.getElementById('golven');
-            if (waveEl) {
-                // Toon afronding tot 1 decimaal op het dashboard
-                waveEl.innerText = waveHeight.toFixed(1);
-            }
             
-            // Sla op in cache zodat andere functies dit ook kunnen gebruiken
-            settings.cachedWaves = waveHeight;
-            if (waveHeight > settings.maxWaves) { 
-                settings.maxWaves = waveHeight; 
-                localStorage.setItem('cmp_maxWaves', waveHeight); 
-                if (typeof updateRecordsUI === 'function') updateRecordsUI();
+            if (waveHeight !== null) {
+                if (waveEl) {
+                    // Toon afronding tot 1 decimaal op het dashboard
+                    waveEl.innerText = waveHeight.toFixed(1);
+                }
+                
+                // Sla op in cache zodat andere functies dit ook kunnen gebruiken
+                settings.cachedWaves = waveHeight;
+                if (waveHeight > settings.maxWaves) { 
+                    settings.maxWaves = waveHeight; 
+                    localStorage.setItem('cmp_maxWaves', waveHeight); 
+                    if (typeof updateRecordsUI === 'function') updateRecordsUI();
+                }
+            } else {
+                // Op land of buiten maritiem dekkingsgebied geeft API 'null'
+                console.log('ℹ️ Actuele locatie is waarschijnlijk op land (golfhoogte is null).');
+                if (waveEl) waveEl.innerText = '--';
             }
         } else {
             console.warn('⚠️ Geen geldige wave_height gevonden in de Open-Meteo data.');
