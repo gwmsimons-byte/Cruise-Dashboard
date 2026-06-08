@@ -862,27 +862,30 @@ async function fetchGlobalWaves() {
     const min_lat = bounds.getSouth();
     const max_lat = bounds.getNorth();
 
-    // Bouw een grid van 8x8 (64 coördinaten) over het zichtbare scherm
-    // Omdat de lokale Python GRIB-API niet meer beschikbaar is, vragen we dit on-the-fly aan Open-Meteo.
-    const latStep = (max_lat - min_lat) / 7;
-    const lonStep = (max_lon - min_lon) / 7;
+    // Bouw een grid van 9x9 (81 coördinaten) over het zichtbare scherm
+    // We gebruiken 9x9 omdat Open-Meteo maximaal 100 punten per API-call toestaat.
+    const gridCount = 9;
+    const latStep = (max_lat - min_lat) / (gridCount - 1);
+    const lonStep = (max_lon - min_lon) / (gridCount - 1);
 
     const lats = [];
     const lons = [];
+    const origLons = []; // Onthoud de originele longitudes voor correcte weergave op wrapped maps
 
-    for (let i = 0; i <= 7; i++) {
-        for (let j = 0; j <= 7; j++) {
+    for (let i = 0; i < gridCount; i++) {
+        for (let j = 0; j < gridCount; j++) {
             let lat = min_lat + i * latStep;
             let lon = min_lon + j * lonStep;
             
             // Limiteer latitude tot polen
             if (lat > 90) lat = 90;
             if (lat < -90) lat = -90;
-            // Normaliseer longitude tussen -180 en +180
+            // Normaliseer longitude tussen -180 en +180 voor de API
             let normLon = ((lon + 180) % 360 + 360) % 360 - 180;
             
             lats.push(lat.toFixed(2));
             lons.push(normLon.toFixed(2));
+            origLons.push(lon.toFixed(2));
         }
     }
 
@@ -901,19 +904,22 @@ async function fetchGlobalWaves() {
         
         for (let i = 0; i < results.length; i++) {
             const data = results[i];
-            // Alleen toevoegen als het punt op zee ligt (wave_height is dan niet null)
+            // Alleen toevoegen als het punt op zee ligt en de golfhoogte minimaal 2.0 meter is
             if (data && data.current && data.current.wave_height !== null) {
-                features.push({
-                    type: 'Feature',
-                    geometry: {
-                        type: 'Point',
-                        coordinates: [parseFloat(lons[i]), parseFloat(lats[i])]
-                    },
-                    properties: {
-                        swh: data.current.wave_height,
-                        dirpw: data.current.wave_direction !== null ? data.current.wave_direction : 0
-                    }
-                });
+                const swh = data.current.wave_height;
+                if (swh >= 2.0) {
+                    features.push({
+                        type: 'Feature',
+                        geometry: {
+                            type: 'Point',
+                            coordinates: [parseFloat(origLons[i]), parseFloat(lats[i])]
+                        },
+                        properties: {
+                            swh: swh,
+                            dirpw: data.current.wave_direction !== null ? data.current.wave_direction : 0
+                        }
+                    });
+                }
             }
         }
         
