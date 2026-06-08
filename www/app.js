@@ -853,40 +853,42 @@ async function fetchMarineData(lat, lon, force = false) {
 }
 
 async function fetchGlobalWaves() {
-    if (!map || !map.isStyleLoaded() || !wavesVisible) return;
+    // 1. Actuele positie ophalen. 'currentPos' bevat de huidige locatie als de GPS actief is.
+    const lat = (typeof currentPos !== 'undefined' && currentPos.lat) ? currentPos.lat : (settings.lastWeatherLat || 0);
+    const lon = (typeof currentPos !== 'undefined' && currentPos.lon) ? currentPos.lon : (settings.lastWeatherLon || 0);
 
-    // Haal de huidige kaartgrenzen op om data te beperken
-    const bounds = map.getBounds();
-    const min_lon = bounds.getWest();
-    const max_lon = bounds.getEast();
-    const min_lat = bounds.getSouth();
-    const max_lat = bounds.getNorth();
-
-    // Ontdek host IP, of gebruik het lokale Mac IP voor de telefoon
-    let url;
-    const isCapacitor = window.Capacitor && window.Capacitor.isNative;
-    const host = window.location.hostname;
-
-    if (isCapacitor) {
-        // iOS App: Altijd direct naar de online Koyeb database verbinden!
-        url = `https://opposite-rosetta-cruisedash-94c0866d.koyeb.app/api/waves?min_lon=${min_lon}&max_lon=${max_lon}&min_lat=${min_lat}&max_lat=${max_lat}&min_height=2.0`;
-    } else if (host === 'localhost' || host === '127.0.0.1' || host === '') {
-        // Laptop lokale test (buiten Koyeb)
-        url = `http://192.168.1.142:8000/api/waves?min_lon=${min_lon}&max_lon=${max_lon}&min_lat=${min_lat}&max_lat=${max_lat}&min_height=2.0`;
-    } else {
-        // Productiemodus via webbrowser op de Koyeb site zelf
-        url = `/api/waves?min_lon=${min_lon}&max_lon=${max_lon}&min_lat=${min_lat}&max_lat=${max_lat}&min_height=2.0`;
-    }
+    // 2. Open-Meteo Marine API endpoint
+    const url = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&current=wave_height`;
 
     try {
         const res = await fetch(url);
+        if (!res.ok) throw new Error(`Netwerkfout: ${res.status}`);
+        
         const data = await res.json();
-        const source = map.getSource('waves-source');
-        if (source) {
-            source.setData(data);
+        
+        // 3. Parse JSON en update de bestaande UI elementen
+        if (data && data.current && typeof data.current.wave_height !== 'undefined') {
+            const waveHeight = data.current.wave_height;
+            
+            const waveEl = document.getElementById('golven');
+            if (waveEl) {
+                // Toon afronding tot 1 decimaal op het dashboard
+                waveEl.innerText = waveHeight.toFixed(1);
+            }
+            
+            // Sla op in cache zodat andere functies dit ook kunnen gebruiken
+            settings.cachedWaves = waveHeight;
+            if (waveHeight > settings.maxWaves) { 
+                settings.maxWaves = waveHeight; 
+                localStorage.setItem('cmp_maxWaves', waveHeight); 
+                if (typeof updateRecordsUI === 'function') updateRecordsUI();
+            }
+        } else {
+            console.warn('⚠️ Geen geldige wave_height gevonden in de Open-Meteo data.');
         }
     } catch (e) {
-        console.warn('⚠️ Global Waves ophalen mislukt (Staat de Python API aan?):', e);
+        // 4. Foutafhandeling netjes in de console loggen
+        console.warn('⚠️ Ophalen van actuele golfhoogte via Open-Meteo mislukt:', e);
     }
 }
 
