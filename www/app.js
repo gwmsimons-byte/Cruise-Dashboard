@@ -1014,8 +1014,10 @@ window.toggleWaves = function() {
 
 // === RAIN RADAR OVERLAY (RainViewer) ===
 let radarVisible = false;
-let radarInterval;
-let radarTime = null;
+let radarInterval; // API polling
+let radarAnimationTimer = null; // Animation timer
+let radarFrames = [];
+let currentRadarFrameIndex = 0;
 
 async function initRadar() {
     if (!map || !map.isStyleLoaded() || !radarVisible) return;
@@ -1024,46 +1026,136 @@ async function initRadar() {
         if (!res.ok) throw new Error("RainViewer status check mislukt");
         const data = await res.json();
         
-        if (data.radar && data.radar.past && data.radar.past.length > 0) {
-            const latest = data.radar.past[data.radar.past.length - 1];
-            radarTime = latest.time;
-            const tilePath = latest.path; 
-            const host = data.host || 'https://tilecache.rainviewer.com';
-            const tileUrl = `${host}${tilePath}/256/{z}/{x}/{y}/2/1_1.png`;
+        // Verwijder oude single-layer radar als die nog bestaat
+        if (map.getLayer('radar-layer')) {
+            map.removeLayer('radar-layer');
+        }
+        if (map.getSource('radar-source')) {
+            map.removeSource('radar-source');
+        }
 
-            if (!map.getSource('radar-source')) {
-                map.addSource('radar-source', {
-                    type: 'raster',
-                    tiles: [tileUrl],
-                    tileSize: 256,
-                    maxzoom: 7
-                });
-            } else {
-                const source = map.getSource('radar-source');
-                if (source && source.setTiles) {
-                    source.setTiles([tileUrl]);
+        if (data.radar && data.radar.past && data.radar.past.length > 0) {
+            const host = data.host || 'https://tilecache.rainviewer.com';
+            
+            // We pakken alle past frames (meestal laatste 2 uur in stappen van 10m, dus ~12 stuks)
+            radarFrames = data.radar.past.map(f => {
+                return {
+                    time: f.time,
+                    tileUrl: `${host}${f.path}/256/{z}/{x}/{y}/2/1_1.png`
+                };
+            });
+            
+            const layers = map.getStyle().layers;
+            const firstLabelId = layers.find(l => l.type === 'symbol' && l.id.includes('label'))?.id;
+
+            // Zorg dat de sources en layers bestaan
+            for (let i = 0; i < radarFrames.length; i++) {
+                const sourceId = `radar-source-${i}`;
+                const layerId = `radar-layer-${i}`;
+                const url = radarFrames[i].tileUrl;
+
+                if (!map.getSource(sourceId)) {
+                    map.addSource(sourceId, {
+                        type: 'raster',
+                        tiles: [url],
+                        tileSize: 256,
+                        maxzoom: 7
+                    });
+                } else {
+                    const source = map.getSource(sourceId);
+                    if (source && source.setTiles) {
+                        source.setTiles([url]);
+                    }
+                }
+
+                if (!map.getLayer(layerId)) {
+                    map.addLayer({
+                        id: layerId,
+                        type: 'raster',
+                        source: sourceId,
+                        paint: {
+                            'raster-opacity': 0, // Start onzichtbaar
+                            'raster-fade-duration': 150
+                        }
+                    }, firstLabelId);
                 }
             }
 
-            if (!map.getLayer('radar-layer')) {
-                const layers = map.getStyle().layers;
-                const firstLabelId = layers.find(l => l.type === 'symbol' && l.id.includes('label'))?.id;
-                
-                map.addLayer({
-                    id: 'radar-layer',
-                    type: 'raster',
-                    source: 'radar-source',
-                    paint: {
-                        'radar-opacity': 0.65,
-                        'raster-fade-duration': 300
-                    }
-                }, firstLabelId);
+            // Toon de badge
+            const timeBadge = document.getElementById('radar-time-container');
+            if (timeBadge) {
+                timeBadge.classList.remove('hidden');
             }
-            
-            map.setLayoutProperty('radar-layer', 'visibility', 'visible');
+
+            // Start de animatie loop
+            startRadarAnimation();
         }
     } catch (e) {
         console.warn("⚠️ Fout bij initialiseren van RainViewer radar:", e);
+    }
+}
+
+function startRadarAnimation() {
+    stopRadarAnimation(); // Zorg dat er geen dubbele timers lopen
+    if (radarFrames.length === 0) return;
+
+    currentRadarFrameIndex = 0;
+    
+    // Toon eerste frame direct
+    showRadarFrame(currentRadarFrameIndex);
+
+    // Frame wisselen elke 1000ms
+    radarAnimationTimer = setInterval(() => {
+        // Verberg huidige frame
+        hideRadarFrame(currentRadarFrameIndex);
+        
+        // Volgende frame
+        currentRadarFrameIndex = (currentRadarFrameIndex + 1) % radarFrames.length;
+        
+        // Toon nieuwe frame
+        showRadarFrame(currentRadarFrameIndex);
+    }, 1000);
+}
+
+function stopRadarAnimation() {
+    if (radarAnimationTimer) {
+        clearInterval(radarAnimationTimer);
+        radarAnimationTimer = null;
+    }
+}
+
+function showRadarFrame(index) {
+    if (!map || index >= radarFrames.length) return;
+    const layerId = `radar-layer-${index}`;
+    if (map.getLayer(layerId)) {
+        map.setPaintProperty(layerId, 'raster-opacity', 0.65);
+    }
+    
+    // Update de UI badge
+    const frame = radarFrames[index];
+    const radarTimeVal = document.getElementById('radar-time-val');
+    if (radarTimeVal && frame) {
+        const date = new Date(frame.time * 1000);
+        // Format naar HH:MM
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const timeStr = `${hours}:${minutes}`;
+
+        // Toon label: als het de laatste is, is het 'Actueel', anders de tijd
+        if (index === radarFrames.length - 1) {
+            radarTimeVal.innerText = `${timeStr} (Actueel)`;
+        } else {
+            const minutesAgo = (radarFrames.length - 1 - index) * 10;
+            radarTimeVal.innerText = `${timeStr} (-${minutesAgo}m)`;
+        }
+    }
+}
+
+function hideRadarFrame(index) {
+    if (!map || index >= radarFrames.length) return;
+    const layerId = `radar-layer-${index}`;
+    if (map.getLayer(layerId)) {
+        map.setPaintProperty(layerId, 'raster-opacity', 0);
     }
 }
 
@@ -1082,8 +1174,16 @@ window.toggleRadar = function() {
         } else {
             btn.classList.remove('radar-active');
             clearInterval(radarInterval);
-            if (map.getLayer('radar-layer')) {
-                map.setLayoutProperty('radar-layer', 'visibility', 'none');
+            stopRadarAnimation();
+            
+            // Verberg alle radar layers en verberg de badge
+            for (let i = 0; i < radarFrames.length; i++) {
+                hideRadarFrame(i);
+            }
+            
+            const timeBadge = document.getElementById('radar-time-container');
+            if (timeBadge) {
+                timeBadge.classList.add('hidden');
             }
         }
     }
