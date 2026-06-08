@@ -266,17 +266,23 @@ header {
     transition: all 0.3s ease;
 }
 
+.map-action-btn.standalone.radar-toggle {
+    top: calc(var(--safe-top) + 140px);
+    transition: all 0.3s ease;
+}
+
 .map-action-btn.standalone.tz-toggle {
-    top: calc(var(--safe-top) + 140px); 
+    top: calc(var(--safe-top) + 186px); 
     transition: all 0.3s ease;
 }
 
 .map-action-btn.standalone.dn-toggle {
-    top: calc(var(--safe-top) + 186px);
+    top: calc(var(--safe-top) + 232px);
     transition: all 0.3s ease;
 }
 
 .map-action-btn.wave-active,
+.map-action-btn.radar-active,
 .map-action-btn.tz-active,
 .map-action-btn.dn-active {
     border-color: var(--accent-color);

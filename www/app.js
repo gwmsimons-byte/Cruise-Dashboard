@@ -5,7 +5,7 @@
 const translations = {
     en: {
         heading: "HEADING", distance: "DISTANCE", sog: "SOG", location: "LOCATION",
-        wind: "WIND", waves: "WAVES", settings_title: "Settings",
+        wind: "WIND", waves: "WAVES", rain: "RAIN", settings_title: "Settings",
         language: "Language", units: "Units", night_mode: "Night Mode",
         records_title: "Trip Records", max_speed: "Max Speed:", max_wind: "Max Wind:",
         max_waves: "Max Waves:", reset_btn: "Reset Records",
@@ -16,7 +16,7 @@ const translations = {
     },
     nl: {
         heading: "KOERS", distance: "AFSTAND", sog: "SOG", location: "LOCATIE",
-        wind: "WIND", waves: "GOLVEN", settings_title: "Instellingen",
+        wind: "WIND", waves: "GOLVEN", rain: "REGEN", settings_title: "Instellingen",
         language: "Taal", units: "Eenheden", night_mode: "Nachtmodus",
         records_title: "Trip Records", max_speed: "Max Snelheid:", max_wind: "Max Wind:",
         max_waves: "Max Golven:", reset_btn: "Reset Records",
@@ -27,7 +27,7 @@ const translations = {
     },
     de: {
         heading: "KURS", distance: "DISTANZ", sog: "SOG", location: "STANDORT",
-        wind: "WIND", waves: "WELLEN", settings_title: "Einstellungen",
+        wind: "WIND", waves: "WELLEN", rain: "REGEN", settings_title: "Einstellungen",
         language: "Sprache", units: "Einheiten", night_mode: "Nachtmodus",
         records_title: "Fahrtenschreiber", max_speed: "Max Geschw.:", max_wind: "Max Wind:",
         max_waves: "Max Wellen:", reset_btn: "Zurücksetzen",
@@ -38,7 +38,7 @@ const translations = {
     },
     fr: {
         heading: "CAP", distance: "DISTANCE", sog: "SOG", location: "POSITION",
-        wind: "VENT", waves: "VAGUES", settings_title: "Paramètres",
+        wind: "VENT", waves: "VAGUES", rain: "PLUIE", settings_title: "Paramètres",
         language: "Langue", units: "Unités", night_mode: "Mode Nuit",
         records_title: "Enregistrements", max_speed: "Vitesse Max:", max_wind: "Vent Max:",
         max_waves: "Vagues Max:", reset_btn: "Réinitialiser",
@@ -63,7 +63,8 @@ let settings = {
     lastWeatherLat: parseFloat(localStorage.getItem('cmp_lastWeatherLat')) || null,
     lastWeatherLon: parseFloat(localStorage.getItem('cmp_lastWeatherLon')) || null,
     cachedWind: "--",
-    cachedWaves: "--"
+    cachedWaves: "--",
+    cachedPrecipitation: "--"
 };
 
 let map, shipMarker, isFollowing = true;
@@ -814,6 +815,7 @@ async function fetchMarineData(lat, lon, force = false) {
 
     let waveHeight = settings.cachedWaves !== "--" ? settings.cachedWaves : 0;
     let bft = settings.cachedWind !== "--" ? settings.cachedWind : 0;
+    let precipitation = settings.cachedPrecipitation !== "--" ? settings.cachedPrecipitation : 0;
 
     try {
         // We splitsen de fetches op zodat een missende marine-spot de wind-update niet blokkeert
@@ -821,7 +823,7 @@ async function fetchMarineData(lat, lon, force = false) {
             .then(r => r.json())
             .catch(() => null);
 
-        const wPromise = fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=wind_speed_10m&wind_speed_unit=kmh`)
+        const wPromise = fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=wind_speed_10m,precipitation&wind_speed_unit=kmh`)
             .then(r => r.json())
             .catch(() => null);
 
@@ -834,10 +836,11 @@ async function fetchMarineData(lat, lon, force = false) {
         if (wData && wData.current) {
             const windSpeedKmh = wData.current.wind_speed_10m;
             bft = kmhToBeaufort(windSpeedKmh);
+            precipitation = wData.current.precipitation !== undefined ? wData.current.precipitation : 0;
         }
 
         // UI Updaten
-        updateWeatherUI(bft, waveHeight, Date.now(), !force);
+        updateWeatherUI(bft, waveHeight, precipitation, Date.now(), !force);
 
         if (!force) {
             settings.lastWeatherUpdate = now;
@@ -845,9 +848,19 @@ async function fetchMarineData(lat, lon, force = false) {
             settings.lastWeatherLon = lon;
             settings.cachedWind = bft;
             settings.cachedWaves = waveHeight;
+            settings.cachedPrecipitation = precipitation;
 
             localStorage.setItem('cmp_lastWeatherLat', lat);
             localStorage.setItem('cmp_lastWeatherLon', lon);
+
+            // Sla op in localStorage voor loadWeatherCache om flikkering bij herstart te voorkomen
+            const weatherCacheData = {
+                wind: bft,
+                waves: waveHeight,
+                precipitation: precipitation,
+                time: Date.now()
+            };
+            localStorage.setItem('cmp_cached_weather', JSON.stringify(weatherCacheData));
 
             if (bft > settings.maxWind) { settings.maxWind = bft; localStorage.setItem('cmp_maxWind', bft); }
             if (waveHeight > settings.maxWaves) { settings.maxWaves = waveHeight; localStorage.setItem('cmp_maxWaves', waveHeight); }
@@ -995,6 +1008,82 @@ window.toggleWaves = function() {
             fetchGlobalWaves(); // Haal direct actuele data als je hem net aanzet
         } else {
             btn.classList.remove('wave-active');
+        }
+    }
+}
+
+// === RAIN RADAR OVERLAY (RainViewer) ===
+let radarVisible = false;
+let radarInterval;
+let radarTime = null;
+
+async function initRadar() {
+    if (!map || !map.isStyleLoaded() || !radarVisible) return;
+    try {
+        const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
+        if (!res.ok) throw new Error("RainViewer status check mislukt");
+        const data = await res.json();
+        
+        if (data.radar && data.radar.past && data.radar.past.length > 0) {
+            const latest = data.radar.past[data.radar.past.length - 1];
+            radarTime = latest.time;
+            const tilePath = latest.path; 
+            const host = data.host || 'https://tilecache.rainviewer.com';
+            const tileUrl = `${host}${tilePath}/256/{z}/{x}/{y}/2/1_1.png`;
+
+            if (!map.getSource('radar-source')) {
+                map.addSource('radar-source', {
+                    type: 'raster',
+                    tiles: [tileUrl],
+                    tileSize: 256
+                });
+            } else {
+                const source = map.getSource('radar-source');
+                if (source && source.setTiles) {
+                    source.setTiles([tileUrl]);
+                }
+            }
+
+            if (!map.getLayer('radar-layer')) {
+                const layers = map.getStyle().layers;
+                const firstLabelId = layers.find(l => l.type === 'symbol' && l.id.includes('label'))?.id;
+                
+                map.addLayer({
+                    id: 'radar-layer',
+                    type: 'raster',
+                    source: 'radar-source',
+                    paint: {
+                        'radar-opacity': 0.65,
+                        'raster-fade-duration': 300
+                    }
+                }, firstLabelId);
+            }
+            
+            map.setLayoutProperty('radar-layer', 'visibility', 'visible');
+        }
+    } catch (e) {
+        console.warn("⚠️ Fout bij initialiseren van RainViewer radar:", e);
+    }
+}
+
+window.toggleRadar = function() {
+    if (!map || !map.isStyleLoaded()) return;
+    radarVisible = !radarVisible;
+    
+    const btn = document.getElementById('radarToggleBtn');
+    if (btn) {
+        if (radarVisible) {
+            btn.classList.add('radar-active');
+            initRadar();
+            // Start interval om elke 10 minuten te verversen
+            clearInterval(radarInterval);
+            radarInterval = setInterval(initRadar, 10 * 60 * 1000);
+        } else {
+            btn.classList.remove('radar-active');
+            clearInterval(radarInterval);
+            if (map.getLayer('radar-layer')) {
+                map.setLayoutProperty('radar-layer', 'visibility', 'none');
+            }
         }
     }
 }
@@ -1161,9 +1250,10 @@ window.toggleDayNight = function() {
     }
 }
 
-function updateWeatherUI(wind, waves, timestamp = Date.now(), saveToCache = true) {
+function updateWeatherUI(wind, waves, precipitation = "--", timestamp = Date.now(), saveToCache = true) {
     const windEl = document.getElementById('wind');
     const waveEl = document.getElementById('golven');
+    const rainEl = document.getElementById('regen');
 
     if (!windEl || !waveEl) return;
 
@@ -1172,6 +1262,14 @@ function updateWeatherUI(wind, waves, timestamp = Date.now(), saveToCache = true
 
     windEl.innerText = wind;
     waveEl.innerText = waves;
+    
+    if (rainEl) {
+        if (typeof precipitation === 'number') {
+            rainEl.innerText = precipitation.toFixed(1);
+        } else {
+            rainEl.innerText = precipitation;
+        }
+    }
 
     // Weer is "stale" als het ouder is dan 1 uur
     const isStale = (Date.now() - timestamp) > 1000 * 60 * 60;
@@ -1196,7 +1294,7 @@ function loadWeatherCache() {
     const cached = localStorage.getItem('cmp_cached_weather');
     if (cached) {
         const data = JSON.parse(cached);
-        updateWeatherUI(data.wind, data.waves, data.time);
+        updateWeatherUI(data.wind, data.waves, data.precipitation || "--", data.time);
     }
 }
 

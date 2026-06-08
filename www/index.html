@@ -29,6 +29,11 @@
         <span>🌊</span>
     </button>
 
+    <button id="radarToggleBtn" class="map-action-btn standalone radar-toggle" onclick="toggleRadar()"
+        title="Toggle Rain Radar">
+        <span>🌧️</span>
+    </button>
+
     <button id="tzToggleBtn" class="map-action-btn standalone tz-toggle" onclick="toggleZones()"
         title="Toggle Time Zones">
         <span>🌐</span>
@@ -106,9 +111,15 @@
                         <span class="label" data-i18n="wind">WIND</span>
                         <span class="value-small"><span id="wind">--</span> <small>Bft</small></span>
                     </div>
-                    <div class="data-point">
-                        <span class="label" data-i18n="waves">WAVES</span>
-                        <span class="value-small"><span id="golven">--</span> <small>m</small></span>
+                    <div style="display: flex; gap: 15px; width: 100%;">
+                        <div class="data-point" style="flex: 1;">
+                            <span class="label" data-i18n="waves">WAVES</span>
+                            <span class="value-small"><span id="golven">--</span> <small>m</small></span>
+                        </div>
+                        <div class="data-point" style="flex: 1;">
+                            <span class="label" data-i18n="rain">RAIN</span>
+                            <span class="value-small"><span id="regen">--</span> <small>mm</small></span>
+                        </div>
                     </div>
                 </div>
             </div>
