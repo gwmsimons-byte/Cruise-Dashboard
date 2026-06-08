@@ -75,6 +75,8 @@ let currentPos = {
 };
 let lastPos = null, lastTimestamp = 0; // Voor handmatige snelheidsberekening
 let mapMoveTimeout;
+let globalWavesTimeout;
+let lastGlobalWavesFetch = 0;
 let activeRoute = null;
 let cruisePortsDB = []; // Fix: Declareer de database variabele
 let lastNotifiedCrossing = null; // Voor spam-check
@@ -586,10 +588,14 @@ function addBaseLayers() {
             }
         });
 
-        // Activeren van dynamisch ophalen wanneer de kaart beweegt
-        map.on('moveend', fetchGlobalWaves);
-        map.on('zoomend', fetchGlobalWaves);
-        setTimeout(fetchGlobalWaves, 1000); // Initial fetch
+        // Activeren van dynamisch ophalen wanneer de kaart beweegt (met debounce tegen HTTP 429)
+        const debouncedFetchGlobalWaves = () => {
+            clearTimeout(globalWavesTimeout);
+            globalWavesTimeout = setTimeout(fetchGlobalWaves, 1500);
+        };
+        map.on('moveend', debouncedFetchGlobalWaves);
+        map.on('zoomend', debouncedFetchGlobalWaves);
+        setTimeout(fetchGlobalWaves, 1000); // Eerste keer mag direct na 1 seconde
     }
 }
 
@@ -854,6 +860,17 @@ async function fetchMarineData(lat, lon, force = false) {
 
 async function fetchGlobalWaves() {
     if (!map || !map.isStyleLoaded() || !wavesVisible) return;
+
+    // Harde throttle-bescherming tegen Open-Meteo HTTP 429 (maximaal 1 verzoek per 3 seconden)
+    const now = Date.now();
+    const minInterval = 3000;
+    if (now - lastGlobalWavesFetch < minInterval) {
+        clearTimeout(globalWavesTimeout);
+        // Plan een nieuwe poging in zodra de afkoelperiode voorbij is
+        globalWavesTimeout = setTimeout(fetchGlobalWaves, minInterval - (now - lastGlobalWavesFetch));
+        return;
+    }
+    lastGlobalWavesFetch = now;
 
     // Haal de huidige kaartgrenzen op om het venster te bepalen
     const bounds = map.getBounds();
