@@ -298,6 +298,9 @@ function updateItineraryMarkers() {
     itineraryMarkers = [];
 
     CRUISE_TIMELINE.forEach((event, idx) => {
+        // Sla markers voor tussenliggende navigatie-waypoints over om de kaart rustig te houden
+        if (event.type === 'WAYPOINT') return;
+
         const coords = getEventCoords(event);
         if (!coords) return;
 
