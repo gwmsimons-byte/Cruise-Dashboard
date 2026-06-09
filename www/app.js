@@ -68,6 +68,7 @@ let settings = {
 };
 
 let map, shipMarker, isFollowing = true;
+let routeLineVisible = localStorage.getItem('cmp_route_line_visible') !== 'false';
 let currentPos = {
     lat: parseFloat(localStorage.getItem('cmp_last_lat')) || -34.60,
     lon: parseFloat(localStorage.getItem('cmp_last_lon')) || -58.38,
@@ -298,29 +299,26 @@ function updateItineraryMarkers() {
     itineraryMarkers = [];
 
     CRUISE_TIMELINE.forEach((event, idx) => {
-        // Sla markers voor tussenliggende navigatie-waypoints over om de kaart rustig te houden
-        if (event.type === 'WAYPOINT') return;
+        // Toon alleen WAYPOINT markers op de kaart (zodat de gebruiker ze kan bewerken/verwijderen)
+        // Havenplaatsen en stops (type !== 'WAYPOINT') worden overgeslagen
+        if (event.type !== 'WAYPOINT') return;
 
         const coords = getEventCoords(event);
         if (!coords) return;
 
         const el = document.createElement('div');
-        el.className = 'port-marker ' + (event.type === 'WAYPOINT' ? 'waypoint-variant' : 'stop-variant');
+        el.className = 'port-marker waypoint-variant';
 
-        // Verschillende iconen per type
-        let icon = "⚓";
-        if (event.type === "SEA_DAY") icon = "🌊";
-        if (event.type === "WAYPOINT") icon = "📍";
+        // Icon voor waypoints
+        let icon = "📍";
 
         el.innerHTML = `<span>${icon}</span>`;
         if (manualTargetIndex === idx) el.classList.add('active');
 
         // Maak popup content
         let popupHTML = `<strong>${event.name || event.port}</strong><br>${event.type}`;
-        if (event.type === 'WAYPOINT') {
-            popupHTML += `<br><small style="opacity:0.7">Double-tap to delete</small>`;
-            popupHTML += `<br><button onclick="removeTimelineEvent(${idx})" style="margin-top:8px; background:#ff3b30; color:white; border:none; border-radius:4px; padding:4px 8px; cursor:pointer;">Delete Waypoint</button>`;
-        }
+        popupHTML += `<br><small style="opacity:0.7">Double-tap to delete</small>`;
+        popupHTML += `<br><button onclick="removeTimelineEvent(${idx})" style="margin-top:8px; background:#ff3b30; color:white; border:none; border-radius:4px; padding:4px 8px; cursor:pointer;">Delete Waypoint</button>`;
 
         const marker = new mapboxgl.Marker({
             element: el,
@@ -449,6 +447,7 @@ function drawRouteLine(geoJsonCoords) {
         // Forceer update van visuele eigenschappen
         map.setPaintProperty('route-line', 'line-width', 8);
         map.setPaintProperty('route-line', 'line-opacity', 1.0);
+        map.setLayoutProperty('route-line', 'visibility', routeLineVisible ? 'visible' : 'none');
     } else {
         // Maak de laag aan (witte stippellijn)
         map.addSource('route-source', {
@@ -469,7 +468,8 @@ function drawRouteLine(geoJsonCoords) {
             'source': 'route-source',
             'layout': {
                 'line-join': 'round',
-                'line-cap': 'round'
+                'line-cap': 'round',
+                'visibility': routeLineVisible ? 'visible' : 'none'
             },
             'paint': {
                 'line-color': '#00d4ff', // Cyan
@@ -2485,8 +2485,27 @@ function updateTimeDisplay() {
     timeEl.innerText = `${hStr}:${mStr}`;
 }
 
-function openSettings() { document.getElementById('settings-overlay').classList.remove('hidden'); }
+function openSettings() {
+    document.getElementById('settings-overlay').classList.remove('hidden');
+    const routeBtn = document.getElementById('routeLineBtn');
+    if (routeBtn) {
+        routeBtn.innerText = routeLineVisible ? "ON" : "OFF";
+    }
+}
 function closeSettings() { document.getElementById('settings-overlay').classList.add('hidden'); }
+
+window.toggleRouteLine = function() {
+    routeLineVisible = !routeLineVisible;
+    const btn = document.getElementById('routeLineBtn');
+    if (btn) {
+        btn.innerText = routeLineVisible ? "ON" : "OFF";
+    }
+    // Update de route-lijn direct op de kaart
+    if (map && map.getLayer('route-line')) {
+        map.setLayoutProperty('route-line', 'visibility', routeLineVisible ? 'visible' : 'none');
+    }
+    localStorage.setItem('cmp_route_line_visible', routeLineVisible);
+};
 function recenterMap() {
     isFollowing = true;
     document.getElementById('recenterBtn').classList.add('hidden');
