@@ -162,6 +162,15 @@ function getEventCoords(event) {
     const key = event.port ? event.port.toUpperCase() : null;
     if (key && WAYPOINTS[key]) return WAYPOINTS[key];
 
+    // Zoek in de grotere cruisePortsDB (cruiseports.json)
+    if (event.port && cruisePortsDB && cruisePortsDB.length > 0) {
+        const normKey = event.port.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const found = cruisePortsDB.find(p => p.name.toLowerCase().replace(/[^a-z0-9]/g, "") === normKey);
+        if (found && found.lat && found.lon) {
+            return { lat: parseFloat(found.lat), lon: parseFloat(found.lon) };
+        }
+    }
+
     return null;
 }
 
@@ -299,26 +308,26 @@ function updateItineraryMarkers() {
     itineraryMarkers = [];
 
     CRUISE_TIMELINE.forEach((event, idx) => {
-        // Toon alleen WAYPOINT markers op de kaart (zodat de gebruiker ze kan bewerken/verwijderen)
-        // Havenplaatsen en stops (type !== 'WAYPOINT') worden overgeslagen
-        if (event.type !== 'WAYPOINT') return;
-
         const coords = getEventCoords(event);
         if (!coords) return;
 
         const el = document.createElement('div');
-        el.className = 'port-marker waypoint-variant';
+        el.className = 'port-marker ' + (event.type === 'WAYPOINT' ? 'waypoint-variant' : 'stop-variant');
 
-        // Icon voor waypoints
-        let icon = "📍";
+        // Verschillende iconen per type
+        let icon = "⚓";
+        if (event.type === "SEA_DAY") icon = "🌊";
+        if (event.type === "WAYPOINT") icon = "📍";
 
         el.innerHTML = `<span>${icon}</span>`;
         if (manualTargetIndex === idx) el.classList.add('active');
 
         // Maak popup content
         let popupHTML = `<strong>${event.name || event.port}</strong><br>${event.type}`;
-        popupHTML += `<br><small style="opacity:0.7">Double-tap to delete</small>`;
-        popupHTML += `<br><button onclick="removeTimelineEvent(${idx})" style="margin-top:8px; background:#ff3b30; color:white; border:none; border-radius:4px; padding:4px 8px; cursor:pointer;">Delete Waypoint</button>`;
+        if (event.type === 'WAYPOINT') {
+            popupHTML += `<br><small style="opacity:0.7">Double-tap to delete</small>`;
+            popupHTML += `<br><button onclick="removeTimelineEvent(${idx})" style="margin-top:8px; background:#ff3b30; color:white; border:none; border-radius:4px; padding:4px 8px; cursor:pointer;">Delete Waypoint</button>`;
+        }
 
         const marker = new mapboxgl.Marker({
             element: el,
@@ -1653,6 +1662,8 @@ async function loadCruisePortsDB() {
         const response = await fetch('cruiseports.json');
         cruisePortsDB = await response.json();
         console.log("⚓ Port Database loaded:", cruisePortsDB.length, "ports");
+        // Herteken route en markers zodra de database geladen is
+        if (typeof checkItinerary === 'function') checkItinerary();
     } catch (e) {
         console.warn("Could not load cruiseports.json, falling back to WAYPOINTS only.");
     }
@@ -2667,6 +2678,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 4. Itinerary & Timeline Management
     try {
+        if (typeof loadCruisePortsDB === 'function') loadCruisePortsDB();
         if (typeof loadTimeline === 'function') loadTimeline();
         if (typeof loadWeatherCache === 'function') loadWeatherCache();
 
