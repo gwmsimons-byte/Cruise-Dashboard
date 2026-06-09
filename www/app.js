@@ -2283,9 +2283,9 @@ function saveTimeline() {
 
 function loadTimeline() {
     // Forceer eenmalige reset om caching van oude schema's te voorkomen
-    if (!localStorage.getItem('force_load_new_itinerary_v3')) {
+    if (!localStorage.getItem('force_load_empty_itinerary_v4')) {
         localStorage.removeItem('cmp_cruise_timeline');
-        localStorage.setItem('force_load_new_itinerary_v3', 'true');
+        localStorage.setItem('force_load_empty_itinerary_v4', 'true');
     }
     const saved = localStorage.getItem('cmp_cruise_timeline');
     if (saved) {
