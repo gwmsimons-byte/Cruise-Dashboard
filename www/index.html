@@ -9,6 +9,7 @@
     <link href='https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css' rel='stylesheet' />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css?v=6">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
     <!-- PWA / Native App Mode voor iOS en Android -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -50,7 +51,7 @@
                 <span id="net-indicator" class="indicator">🌐</span>
                 <span id="sat-indicator" class="indicator">🛰️</span>
                 <span id="gps-time" class="time-label">--:--</span>
-                <span class="unit-mini" style="margin-left: 2px; opacity: 0.9;">UTC</span>
+                <span class="unit-mini custom-utc-label">UTC</span>
             </div>
 
             <div class="header-heading">
@@ -116,12 +117,12 @@
                         <span class="label" data-i18n="wind">WIND</span>
                         <span class="value-small"><span id="wind">--</span> <small>Bft</small></span>
                     </div>
-                    <div style="display: flex; gap: 15px; width: 100%;">
-                        <div class="data-point" style="flex: 1;">
+                    <div class="env-stats-row">
+                        <div class="data-point flex-1">
                             <span class="label" data-i18n="waves">WAVES</span>
                             <span class="value-small"><span id="golven">--</span> <small>m</small></span>
                         </div>
-                        <div class="data-point" style="flex: 1;">
+                        <div class="data-point flex-1">
                             <span class="label" data-i18n="rain">RAIN</span>
                             <span class="value-small"><span id="regen">--</span> <small>mm</small></span>
                         </div>
@@ -230,7 +231,7 @@
             <button class="back-btn" onclick="closeRouteEditor()">✕</button>
             <h2>Manage Cruise Route</h2>
             <div class="start-date-config">
-                <label>Departure Date</label>
+                <label for="cruise-start-date">Departure Date</label>
                 <input type="date" id="cruise-start-date" onchange="updateTimelineDates()">
             </div>
         </div>
@@ -254,7 +255,7 @@
             <div class="search-input-wrapper">
                 <span>🔍</span>
                 <input type="text" id="port-search-input" placeholder="Search port (e.g. Rio, Miami...)"
-                    oninput="filterPorts()">
+                    aria-label="Search port" title="Search port" oninput="filterPorts()">
                 <button onclick="closePortSearch()" class="close-btn">✕</button>
             </div>
 
