@@ -1597,8 +1597,8 @@ function updateDistance() {
         const target = CRUISE_TIMELINE[manualTargetIndex];
         targetName = target.name || target.port || "Selected Stop";
 
-        const portKey = target.port ? target.port.toUpperCase() : null;
-        let targetCoords = (portKey ? WAYPOINTS[portKey] : null) || target.coords;
+        const dbPort = getPortData(target.port || target.name);
+        let targetCoords = target.coords || (dbPort ? { lat: parseFloat(dbPort.lat), lon: parseFloat(dbPort.lon) } : null);
 
         // --- SLIMME LOGICA VOOR SEADAGEN ---
         if (!targetCoords) {
@@ -1610,8 +1610,8 @@ function updateDistance() {
                 // Geen specifieke plek? Toon afstand naar de eerstvolgende haven na deze seaday
                 for (let i = manualTargetIndex + 1; i < CRUISE_TIMELINE.length; i++) {
                     const nextT = CRUISE_TIMELINE[i];
-                    const nextKey = nextT.port ? nextT.port.toUpperCase() : null;
-                    const nextCoords = (nextKey ? WAYPOINTS[nextKey] : null) || nextT.coords;
+                    const nextDbPort = getPortData(nextT.port || nextT.name);
+                    const nextCoords = nextT.coords || (nextDbPort ? { lat: parseFloat(nextDbPort.lat), lon: parseFloat(nextDbPort.lon) } : null);
                     if (nextCoords) {
                         targetCoords = nextCoords;
                         // Optioneel: We houden de naam "Sea Day" maar de afstand is naar de bestemming
@@ -2330,6 +2330,13 @@ function addEventToTimeline(type, portKey = null) {
     saveTimeline();
     renderTimeline();
     checkItinerary();
+    
+    // Wis de tekst in de zoekbalk na invoer
+    const searchInput = document.getElementById('port-search-input');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    
     closePortSearch();
 }
 
