@@ -2767,9 +2767,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 4. Itinerary & Timeline Management
     try {
-        if (typeof loadCruisePortsDB === 'function') loadCruisePortsDB();
-        if (typeof loadTimeline === 'function') loadTimeline();
-        if (typeof loadWeatherCache === 'function') loadWeatherCache();
+        loadTimeline();
+        loadWeatherCache();
 
         // Restore manual selection
         const savedTarget = localStorage.getItem('cmp_manual_target');
@@ -2778,13 +2777,15 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log("📍 Dashboard restoring manual target index:", manualTargetIndex);
         }
 
-        if (typeof checkItinerary === 'function') checkItinerary();
+        // Eerst database inladen, daarna checkItinerary uitvoeren
+        loadCruisePortsDB().then(() => {
+            if (typeof checkItinerary === 'function') checkItinerary();
+            // Force distance update after a short delay
+            setTimeout(() => {
+                updateDistance();
+            }, 500);
+        });
     } catch (e) { console.warn("Error during itinerary initialization:", e); }
-
-    // Force distance update after a short delay
-    setTimeout(() => {
-        updateDistance();
-    }, 500);
 
     // Initial Compass Permission
     requestCompassPermission();
