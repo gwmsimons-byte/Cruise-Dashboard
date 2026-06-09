@@ -8,7 +8,7 @@
     <script src='https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js'></script>
     <link href='https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css' rel='stylesheet' />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=6">
+    <link rel="stylesheet" href="style.css?v=7">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
     <!-- PWA / Native App Mode voor iOS en Android -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -222,7 +222,7 @@
     </div>
     <!-- <script src="capacitor.js"></script> -->
     <script src="itinerary.js"></script>
-    <script src="app.js?v=10"></script>
+    <script src="app.js?v=11"></script>
 
 
     <!-- ROUTE EDITOR OVERLAY -->
@@ -230,7 +230,6 @@
         <div class="editor-header">
             <button class="back-btn" onclick="closeRouteEditor()">✕</button>
             <h2>Manage Cruise Route</h2>
-            <button class="clear-route-btn" onclick="clearTimelineWithConfirm()">Reset Route</button>
             <div class="start-date-config">
                 <label for="cruise-start-date">Departure Date</label>
                 <input type="date" id="cruise-start-date" onchange="updateTimelineDates()">
@@ -249,7 +248,8 @@
         </div>
 
 
-        <!-- Floating Action Button -->
+        <!-- Floating Action Buttons -->
+        <button class="clear-route-btn" onclick="clearTimelineWithConfirm()">Clear All</button>
         <button class="add-stop-btn" onclick="showAddStopUI()">+</button>
         <!-- PORT SEARCH OVERLAY -->
         <div id="port-search-overlay" class="hidden">
