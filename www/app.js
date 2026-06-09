@@ -159,9 +159,6 @@ function getEventCoords(event) {
     if (event.coords) return event.coords;
     if (event.lat !== undefined && event.lon !== undefined) return { lat: event.lat, lon: event.lon };
 
-    const key = event.port ? event.port.toUpperCase() : null;
-    if (key && WAYPOINTS[key]) return WAYPOINTS[key];
-
     // Zoek in de grotere cruisePortsDB (cruiseports.json)
     if (event.port && cruisePortsDB && cruisePortsDB.length > 0) {
         const normKey = event.port.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -1676,8 +1673,7 @@ async function fetchTimelineWeather() {
     for (const portKey of ports) {
         if (timelineWeatherCache[portKey]) continue; // Reeds geladen
 
-        const lookupKey = portKey ? portKey.toUpperCase() : null;
-        const coords = lookupKey ? WAYPOINTS[lookupKey] : null;
+        const coords = getEventCoords({ port: portKey });
         if (!coords) continue;
 
         try {
@@ -2242,16 +2238,7 @@ function filterPorts() {
         });
     }
 
-    // 3. FALLBACK TO WAYPOINTS
-    Object.keys(WAYPOINTS).forEach(key => {
-        if (!query || key.toLowerCase().includes(query)) {
-            const item = document.createElement('div');
-            item.className = 'result-item';
-            item.innerHTML = `<strong>📍 ${key}</strong><br><small>Custom Waypoint</small>`;
-            item.onclick = () => addEventToTimeline("ARRIVAL", key);
-            resultsContainer.appendChild(item);
-        }
-    });
+
 }
 
 function addEventToTimeline(type, portKey = null) {
