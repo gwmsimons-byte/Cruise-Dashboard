@@ -168,6 +168,7 @@ header {
     background: var(--card-bg);
     padding: 5px 12px;
     border-radius: 20px;
+    -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
     border: var(--glass-border);
 }
@@ -178,6 +179,7 @@ header {
     padding: 2px 20px;
     border-radius: 20px;
     border: var(--glass-border);
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
 }
 
@@ -244,6 +246,7 @@ header {
     display: flex;
     align-items: center;
     justify-content: center;
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
 }
 
@@ -321,8 +324,8 @@ header {
 .glass-card {
     background: var(--card-bg);
     border: var(--glass-border);
-    backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
     border-radius: 14px;
     display: flex;
     flex-direction: column;
@@ -545,9 +548,8 @@ header {
     border-radius: 10px;
     overflow: hidden;
     position: relative;
-    backdrop-filter: blur(12px);
-    mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
     -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+    mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
 }
 
 .ribbon-strip {
@@ -618,6 +620,7 @@ header {
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.4);
+    -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
     z-index: 2000;
     display: flex;
@@ -636,6 +639,7 @@ header {
 .settings-card {
     width: 320px;
     background: rgba(20, 30, 48, 0.9);
+    -webkit-backdrop-filter: blur(16px);
     backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 20px;
@@ -756,8 +760,8 @@ body.night-mode #map {
     left: 0;
     right: 0;
     background: rgba(15, 23, 42, 0.4);
-    backdrop-filter: blur(40px) saturate(200%);
     -webkit-backdrop-filter: blur(40px) saturate(200%);
+    backdrop-filter: blur(40px) saturate(200%);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 30px;
     padding: 24px;
@@ -852,6 +856,7 @@ body.night-mode #map {
     width: 100vw;
     height: 100vh;
     background: rgba(10, 15, 25, 0.95);
+    -webkit-backdrop-filter: blur(25px);
     backdrop-filter: blur(25px);
     z-index: 2000;
     display: flex;
@@ -904,7 +909,6 @@ body.night-mode #map {
     direction: ltr;
     /* Terug naar standaard rechts (betrouwbaarder op iOS) */
     min-height: 0;
-    -webkit-overflow-scrolling: touch;
     padding: 10px 10px 150px 10px;
     display: flex;
     flex-direction: column;
@@ -950,6 +954,7 @@ body.night-mode #map {
     background: rgba(0, 0, 0, 0.4);
     padding: 10px;
     border-radius: 10px;
+    -webkit-backdrop-filter: blur(5px);
     backdrop-filter: blur(5px);
     width: fit-content;
     margin: 0 auto;
@@ -1035,14 +1040,15 @@ body.night-mode #map {
     gap: 12px;
     align-items: center;
     position: relative;
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease;
     width: 94%;
     /* Iets smaller voor ademruimte voor de scrollbar */
     box-sizing: border-box;
     margin: 0 auto;
-    user-select: none;
     -webkit-user-select: none;
+    user-select: none;
     /* iPhone prevent text select */
     -webkit-touch-callout: none;
     /* iPhone prevent context menu */
@@ -1259,7 +1265,7 @@ body.night-mode #map {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    -webkit-overflow-scrolling: touch;
+    gap: 8px;
 }
 
 .search-results::-webkit-scrollbar {
@@ -1306,6 +1312,7 @@ body.night-mode #map {
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.6);
+    -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
     z-index: 5000;
     display: flex;
@@ -1363,6 +1370,7 @@ body.night-mode #map {
     width: calc(50% + 70px); /* Gelijk met rechterzijde van header-heading (ongeveer) */
     max-width: 300px; /* Zorg dat hij niet te breed wordt op grote schermen */
     background: rgba(0, 40, 60, 0.85);
+    -webkit-backdrop-filter: blur(25px) brightness(1.2);
     backdrop-filter: blur(25px) brightness(1.2);
     border: 1px solid rgba(0, 212, 255, 0.5);
     border-radius: 12px;
@@ -1482,8 +1490,8 @@ body.night-mode #map {
     align-self: center;
     background: rgba(10, 10, 15, 0.8);
     border: 1px solid rgba(0, 212, 255, 0.3);
-    backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
     padding: 6px 14px;
     border-radius: 20px;
     color: #fff;
@@ -1533,8 +1541,8 @@ body.night-mode #map {
 /* Overschrijf Mapbox popup-styling voor donker thema */
 .mapboxgl-popup-content {
     background: rgba(12, 14, 20, 0.92) !important;
-    backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 14px !important;
     padding: 0 !important;
