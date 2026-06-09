@@ -2340,6 +2340,42 @@ function addEventToTimeline(type, portKey = null) {
     closePortSearch();
 }
 
+function clearTimelineWithConfirm() {
+    showConfirmModal("Are you sure you want to clear the entire cruise route?", () => {
+        CRUISE_TIMELINE = [];
+        manualTargetIndex = null;
+        localStorage.removeItem('cmp_manual_target');
+        
+        saveTimeline();
+        renderTimeline();
+        
+        // Reset ook de actieve route / map lagen
+        if (map) {
+            // Verwijder route lijn
+            if (map.getLayer('route-line-layer')) map.removeLayer('route-line-layer');
+            if (map.getSource('route-line-source')) map.removeSource('route-line-source');
+            if (map.getLayer('full-route-line-layer')) map.removeLayer('full-route-line-layer');
+            if (map.getSource('full-route-line-source')) map.removeSource('full-route-line-source');
+        }
+        
+        // Zorg voor een lege status
+        activeRoute = null;
+        currentEvent = null;
+        nextEvent = null;
+        
+        const activeDestNameEl = document.getElementById('active-dest-name');
+        if (activeDestNameEl) activeDestNameEl.innerText = "--";
+        const distValEl = document.getElementById('distanceVal');
+        if (distValEl) distValEl.innerText = "--";
+        const drawerDist = document.getElementById('dist-remaining');
+        if (drawerDist) drawerDist.innerText = "--";
+        
+        updateItineraryMarkers();
+        triggerHaptic('notificationSuccess');
+        console.log("⚓ Cruise route volledig leeggemaakt.");
+    });
+}
+
 
 function saveTimeline() {
     localStorage.setItem('cmp_cruise_timeline', JSON.stringify(CRUISE_TIMELINE));

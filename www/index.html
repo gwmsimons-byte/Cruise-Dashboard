@@ -222,7 +222,7 @@
     </div>
     <!-- <script src="capacitor.js"></script> -->
     <script src="itinerary.js"></script>
-    <script src="app.js?v=9"></script>
+    <script src="app.js?v=10"></script>
 
 
     <!-- ROUTE EDITOR OVERLAY -->
@@ -230,6 +230,7 @@
         <div class="editor-header">
             <button class="back-btn" onclick="closeRouteEditor()">✕</button>
             <h2>Manage Cruise Route</h2>
+            <button class="clear-route-btn" onclick="clearTimelineWithConfirm()">Reset Route</button>
             <div class="start-date-config">
                 <label for="cruise-start-date">Departure Date</label>
                 <input type="date" id="cruise-start-date" onchange="updateTimelineDates()">
