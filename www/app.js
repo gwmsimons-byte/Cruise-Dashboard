@@ -128,7 +128,10 @@ function initMap(lat, lon) {
 
     map.on('load', () => {
         initCursorListener();
-        checkItinerary();
+        // Alleen checken als de database er al is, anders gebeurt het al in loadCruisePortsDB.then()
+        if (cruisePortsDB && cruisePortsDB.length > 0) {
+            checkItinerary();
+        }
     });
 }
 
