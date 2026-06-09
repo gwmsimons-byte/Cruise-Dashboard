@@ -154,18 +154,25 @@ function setRoute(points, endName = "Destination") {
     updateDistance();
 }
 
+/**
+ * Zoekt de volledige port-data op in cruisePortsDB (inclusief source_url).
+ * Retourneert het volledige object of null als niet gevonden.
+ */
+function getPortData(portName) {
+    if (!portName || !cruisePortsDB || cruisePortsDB.length === 0) return null;
+    const normKey = portName.toLowerCase().replace(/[^a-z0-9]/g, "");
+    return cruisePortsDB.find(p => p.name.toLowerCase().replace(/[^a-z0-9]/g, "") === normKey) || null;
+}
+
 function getEventCoords(event) {
     if (!event) return null;
     if (event.coords) return event.coords;
     if (event.lat !== undefined && event.lon !== undefined) return { lat: event.lat, lon: event.lon };
 
     // Zoek in de grotere cruisePortsDB (cruiseports.json)
-    if (event.port && cruisePortsDB && cruisePortsDB.length > 0) {
-        const normKey = event.port.toLowerCase().replace(/[^a-z0-9]/g, "");
-        const found = cruisePortsDB.find(p => p.name.toLowerCase().replace(/[^a-z0-9]/g, "") === normKey);
-        if (found && found.lat && found.lon) {
-            return { lat: parseFloat(found.lat), lon: parseFloat(found.lon) };
-        }
+    const found = getPortData(event.port);
+    if (found && found.lat && found.lon) {
+        return { lat: parseFloat(found.lat), lon: parseFloat(found.lon) };
     }
 
     return null;
@@ -319,12 +326,64 @@ function updateItineraryMarkers() {
         el.innerHTML = `<span>${icon}</span>`;
         if (manualTargetIndex === idx) el.classList.add('active');
 
-        // Maak popup content
-        let popupHTML = `<strong>${event.name || event.port}</strong><br>${event.type}`;
+        // Maak popup content met externe links
+        const portData = getPortData(event.port || event.name);
+        const portName = event.name || event.port || '—';
+        const eventDate = event.time ? new Date(event.time) : (event.date ? new Date(event.date) : null);
+
+        let popupHTML = `<div class="port-popup">`;
+        popupHTML += `<strong class="port-popup-name">${portName}</strong>`;
+
+        // Toon land/locatie als beschikbaar
+        if (portData && portData.country) {
+            popupHTML += `<span class="port-popup-country">${portData.country}</span>`;
+        }
+
+        // Toon de geplande datum als beschikbaar
+        if (eventDate && event.type !== 'WAYPOINT') {
+            const dateStr = eventDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+            popupHTML += `<span class="port-popup-date">📅 ${dateStr}</span>`;
+        }
+
+        // Event type label
+        popupHTML += `<span class="port-popup-type">${event.type.replace('_', ' ')}</span>`;
+
+        // === Externe links sectie ===
+        if (event.type !== 'WAYPOINT' && event.type !== 'SEA_DAY') {
+            popupHTML += `<div class="port-popup-links">`;
+
+            // WhatsInPort link (uit cruiseports.json source_url)
+            if (portData && portData.source_url) {
+                popupHTML += `<a href="${portData.source_url}" target="_blank" rel="noopener" class="port-popup-link wip-link">`;
+                popupHTML += `<span class="link-icon">🚢</span>`;
+                popupHTML += `<span class="link-text">WhatsInPort</span>`;
+                popupHTML += `<span class="link-arrow">↗</span>`;
+                popupHTML += `</a>`;
+            }
+
+            // GetYourGuide link (zoeklink op basis van havennaam + datum)
+            const gygQuery = encodeURIComponent(portName);
+            let gygUrl = `https://www.getyourguide.com/s/?q=${gygQuery}`;
+            if (eventDate) {
+                const dateISO = eventDate.toISOString().split('T')[0]; // YYYY-MM-DD
+                gygUrl += `&date_from=${dateISO}&date_to=${dateISO}`;
+            }
+            popupHTML += `<a href="${gygUrl}" target="_blank" rel="noopener" class="port-popup-link gyg-link">`;
+            popupHTML += `<span class="link-icon">🎫</span>`;
+            popupHTML += `<span class="link-text">GetYourGuide</span>`;
+            popupHTML += `<span class="link-arrow">↗</span>`;
+            popupHTML += `</a>`;
+
+            popupHTML += `</div>`; // .port-popup-links
+        }
+
+        // Waypoint-specifiek: verwijderknop
         if (event.type === 'WAYPOINT') {
             popupHTML += `<br><small style="opacity:0.7">Double-tap to delete</small>`;
             popupHTML += `<br><button onclick="removeTimelineEvent(${idx})" style="margin-top:8px; background:#ff3b30; color:white; border:none; border-radius:4px; padding:4px 8px; cursor:pointer;">Delete Waypoint</button>`;
         }
+
+        popupHTML += `</div>`; // .port-popup
 
         const marker = new mapboxgl.Marker({
             element: el,
